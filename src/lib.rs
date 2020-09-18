@@ -9,30 +9,57 @@ use crate::format::Format;
 use crate::error::{ParseError, ReadError};
 use byteorder::{ByteOrder, NativeEndian};
 use std::convert::TryInto;
+use std::io::SeekFrom;
 use tokio::io::AsyncSeek;
 use tokio::prelude::*;
 
-pub struct Reader<T> {
-    input: T,
+pub struct Reader {
     head: Header,
+    levels_index: Vec<LevelInfo>,
 }
 
-impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
-    pub async fn new(mut input: T) -> ReadResult<Self> {
-        let head = Self::read_head(&mut input).await?;
-        Ok(Self { input, head })
+impl Reader {
+    pub async fn new<T>(input: &mut T) -> ReadResult<Self>
+    where
+        T: AsyncRead + AsyncSeek + Unpin,
+    {
+        let head = Self::read_head(input).await?;
+        let levels_index = Self::read_level_index(input, &head).await?;
+        Ok(Self { head, levels_index })
     }
 
-    pub async fn read_frame(&self, frame_index: u64) -> ReadResult<Frame> {
-        todo!()
-    }
-
-    async fn read_head(input: &mut T) -> ReadResult<Header> {
+    async fn read_head<T>(input: &mut T) -> ReadResult<Header>
+    where
+        T: AsyncRead + AsyncSeek + Unpin,
+    {
         let mut head_bytes = [0; 48];
         input.read_exact(&mut head_bytes).await?;
         Self::test_identifier(&head_bytes)?;
 
         Ok(Header::from_bytes(&head_bytes)?)
+    }
+
+    async fn read_level_index<T>(input: &mut T, head: &Header) -> ReadResult<Vec<LevelInfo>>
+    where
+        T: AsyncRead + AsyncSeek + Unpin,
+    {
+        const LEVEL_INDEX_START_BYTE: u64 = 80;
+        const LEVEL_INDEX_BYTE_LEN: u32 = 24;
+        let level_count = head.level_count.max(1);
+        let level_index_bytes_len = level_count * LEVEL_INDEX_BYTE_LEN;
+        let mut level_index_bytes: Vec<u8> = (0..level_index_bytes_len).map(|_| 0u8).collect();
+
+        input.seek(SeekFrom::Start(LEVEL_INDEX_START_BYTE)).await?;
+        input.read_exact(&mut level_index_bytes).await?;
+        let mut infos = Vec::with_capacity(level_count as usize);
+        for level_index in 0..level_count {
+            let start_byte = (level_index * LEVEL_INDEX_BYTE_LEN) as usize;
+            let end_byte = start_byte + LEVEL_INDEX_BYTE_LEN as usize;
+            infos.push(LevelInfo::from_bytes(
+                &level_index_bytes[start_byte..end_byte],
+            ))
+        }
+        Ok(infos)
     }
 
     fn test_identifier(head_bytes: &HeadBytes) -> ReadResult<()> {
@@ -44,8 +71,44 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
         Err(ReadError::ParseError(ParseError::BadIdentifier(red_id)))
     }
 
-    pub fn get_header(&self) -> &Header {
+    pub fn header(&self) -> &Header {
         &self.head
+    }
+
+    pub fn levels_index(&self) -> &Vec<LevelInfo> {
+        &self.levels_index
+    }
+
+    pub fn regions_description(&self) -> Vec<RegionDescription> {
+        let base_offset = self.base_offset();
+        self.levels_index
+            .iter()
+            .enumerate()
+            .map(|(i, level)| self.region_from_level_index(i, level.offset - base_offset))
+            .collect()
+    }
+
+    fn base_offset(&self) -> u64 {
+        self.levels_index
+            .iter()
+            .map(|l| l.offset)
+            .min()
+            .expect("No levels got, but read some on constructing")
+    }
+
+    fn region_from_level_index(&self, i: usize, offset: u64) -> RegionDescription {
+        RegionDescription {
+            level: i as u32,
+            layer_count: self.head.layer_count.max(1) * self.head.face_count,
+            offset_bytes: offset,
+            width: Self::level_size(self.head.base_width, i as u32),
+            height: Self::level_size(self.head.base_height, i as u32),
+            depth: Self::level_size(self.head.base_depth, i as u32),
+        }
+    }
+
+    fn level_size(base: u32, level: u32) -> u32 {
+        (base >> level).max(1)
     }
 }
 
@@ -58,7 +121,7 @@ pub type ParseResult<T> = Result<T, ParseError>;
 
 pub struct TexData {
     pub header: Header,
-    pub frames: Vec<Frame>,
+    pub frames: Vec<RegionDescription>,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
@@ -119,17 +182,29 @@ impl Header {
 
 type HeadBytes = [u8; 48];
 
-pub struct FrameInfo {
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub struct LevelInfo {
     pub offset: u64,
-    pub length: u64,
+    pub length_bytes: u64,
+    pub uncompressed_length: u64,
 }
 
-pub struct Frame {
+impl LevelInfo {
+    pub fn from_bytes(data: &[u8]) -> Self {
+        Self {
+            offset: NativeEndian::read_u64(&data[0..8]),
+            length_bytes: NativeEndian::read_u64(&data[8..16]),
+            uncompressed_length: NativeEndian::read_u64(&data[16..24]),
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub struct RegionDescription {
     pub level: u32,
-    pub layer: u32,
-    pub face: u32,
+    pub layer_count: u32,
+    pub offset_bytes: u64,
     pub width: u32,
     pub height: u32,
     pub depth: u32,
-    pub data: Vec<u8>,
 }
