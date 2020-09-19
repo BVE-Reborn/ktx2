@@ -1,5 +1,5 @@
 use ktx2_reader::format::Format;
-use ktx2_reader::{Header, Reader};
+use ktx2_reader::{Header, Reader, RegionDescription};
 use std::path::PathBuf;
 
 #[tokio::main]
@@ -8,36 +8,47 @@ async fn main() {
     let file = tokio::fs::File::open(tex_path)
         .await
         .expect("Can't open file");
-    let reader = Reader::new(file).await.expect("Can't create reader");
+    let mut reader = Reader::new(file).await.expect("Can't create reader");
     let header = reader.header();
-    println!("HEADER: {:#?}", header);
+    println!("Header: {:#?}", header);
     assert_head(header);
 
     let frames_info = reader.levels_index();
-    println!("FRAMES INFO: {:#?}", frames_info);
+    println!("Frames info: {:#?}", frames_info);
     assert_eq!(frames_info.len(), header.level_count.max(1) as usize);
 
     let regions_desc = reader.regions_description();
-    println!("REGIONS: {:#?}", regions_desc);
+    println!("Regions: {:#?}", regions_desc);
     assert_eq!(regions_desc.len(), header.level_count.max(1) as usize);
 
+    let data = reader.read_data().await.expect("Can't read data");
+    println!("Data len: {:?}", data.len());
+    test_data(data, &regions_desc);
     return;
 }
 
+fn test_data(dat: Vec<u8>, info: &[RegionDescription]) {
+    for region in info {
+        let offset = region.offset_bytes as usize;
+        let bytes = &dat[offset..offset + 4];
+        println!("Bytes for level {:?}: {:?}", region.level, bytes);
+    }
+}
+
 fn assert_head(header: &Header) {
-    assert_eq!(header.format, Format::VK_FORMAT_BC2_UNORM_BLOCK);
+    assert_eq!(header.format, Format::VK_FORMAT_R8G8B8A8_UINT);
     assert_eq!(header.type_size, 1);
-    assert_eq!(header.base_width, 256);
-    assert_eq!(header.base_height, 256);
+    assert_eq!(header.base_width, 1024);
+    assert_eq!(header.base_height, 512);
     assert_eq!(header.base_depth, 0);
     assert_eq!(header.layer_count, 0);
     assert_eq!(header.face_count, 1);
-    assert_eq!(header.level_count, 9);
+    assert_eq!(header.level_count, 11);
     assert_eq!(header.supercompression_scheme, 0);
 }
 
 fn get_current_dir() -> PathBuf {
     let mut current_dir = std::env::current_dir().expect("Can't get current directory");
-    current_dir.push("data\\fb.ktx2");
+    current_dir.push("data\\test_tex.ktx2");
     current_dir
 }

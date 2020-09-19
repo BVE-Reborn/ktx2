@@ -58,6 +58,16 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
         Ok(infos)
     }
 
+    pub async fn read_data(&mut self) -> ReadResult<Vec<u8>> {
+        let data_start_byte = self.first_level_offset_bytes();
+        self.input.seek(SeekFrom::Start(data_start_byte)).await?;
+        let data_len_bytes = self.data_len_bytes();
+        let mut buffer = Vec::new();
+        buffer.resize(data_len_bytes as usize, 0);
+        self.input.read_exact(&mut buffer).await?;
+        Ok(buffer)
+    }
+
     fn test_identifier(head_bytes: &HeadBytes) -> ReadResult<()> {
         let mut red_id = [0; 12];
         red_id.copy_from_slice(&head_bytes[0..12]);
@@ -76,7 +86,7 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
     }
 
     pub fn regions_description(&self) -> Vec<RegionDescription> {
-        let base_offset = self.base_offset();
+        let base_offset = self.first_level_offset_bytes();
         self.levels_index
             .iter()
             .enumerate()
@@ -84,12 +94,26 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
             .collect()
     }
 
-    fn base_offset(&self) -> u64 {
+    fn first_level_offset_bytes(&self) -> u64 {
         self.levels_index
             .iter()
             .map(|l| l.offset)
             .min()
             .expect("No levels got, but read some on constructing")
+    }
+
+    pub fn last_level(&self) -> LevelInfo {
+        *self
+            .levels_index
+            .iter()
+            .max_by_key(|l| l.offset)
+            .expect("No levels got, but read some on constructing")
+    }
+
+    pub fn data_len_bytes(&self) -> u64 {
+        let start_offset = self.first_level_offset_bytes();
+        let last_level = self.last_level();
+        last_level.offset + last_level.uncompressed_length_bytes - start_offset
     }
 
     fn region_from_level_index(&self, i: usize, offset: u64) -> RegionDescription {
@@ -182,7 +206,7 @@ type HeadBytes = [u8; 48];
 pub struct LevelInfo {
     pub offset: u64,
     pub length_bytes: u64,
-    pub uncompressed_length: u64,
+    pub uncompressed_length_bytes: u64,
 }
 
 impl LevelInfo {
@@ -190,7 +214,7 @@ impl LevelInfo {
         Self {
             offset: NativeEndian::read_u64(&data[0..8]),
             length_bytes: NativeEndian::read_u64(&data[8..16]),
-            uncompressed_length: NativeEndian::read_u64(&data[16..24]),
+            uncompressed_length_bytes: NativeEndian::read_u64(&data[16..24]),
         }
     }
 }
