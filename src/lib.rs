@@ -13,25 +13,24 @@ use std::io::SeekFrom;
 use tokio::io::AsyncSeek;
 use tokio::prelude::*;
 
-pub struct Reader {
+pub struct Reader<T> {
+    input: T,
     head: Header,
     levels_index: Vec<LevelInfo>,
 }
 
-impl Reader {
-    pub async fn new<T>(input: &mut T) -> ReadResult<Self>
-    where
-        T: AsyncRead + AsyncSeek + Unpin,
-    {
-        let head = Self::read_head(input).await?;
-        let levels_index = Self::read_level_index(input, &head).await?;
-        Ok(Self { head, levels_index })
+impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
+    pub async fn new(mut input: T) -> ReadResult<Self> {
+        let head = Self::read_head(&mut input).await?;
+        let levels_index = Self::read_level_index(&mut input, &head).await?;
+        Ok(Self {
+            input,
+            head,
+            levels_index,
+        })
     }
 
-    async fn read_head<T>(input: &mut T) -> ReadResult<Header>
-    where
-        T: AsyncRead + AsyncSeek + Unpin,
-    {
+    async fn read_head(input: &mut T) -> ReadResult<Header> {
         let mut head_bytes = [0; 48];
         input.read_exact(&mut head_bytes).await?;
         Self::test_identifier(&head_bytes)?;
@@ -39,10 +38,7 @@ impl Reader {
         Ok(Header::from_bytes(&head_bytes)?)
     }
 
-    async fn read_level_index<T>(input: &mut T, head: &Header) -> ReadResult<Vec<LevelInfo>>
-    where
-        T: AsyncRead + AsyncSeek + Unpin,
-    {
+    async fn read_level_index(input: &mut T, head: &Header) -> ReadResult<Vec<LevelInfo>> {
         const LEVEL_INDEX_START_BYTE: u64 = 80;
         const LEVEL_INDEX_BYTE_LEN: u32 = 24;
         let level_count = head.level_count.max(1);

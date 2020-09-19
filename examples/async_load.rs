@@ -5,10 +5,10 @@ use std::path::PathBuf;
 #[tokio::main]
 async fn main() {
     let tex_path = get_current_dir();
-    let mut file = tokio::fs::File::open(tex_path)
+    let file = tokio::fs::File::open(tex_path)
         .await
         .expect("Can't open file");
-    let reader = Reader::new(&mut file).await.expect("Can't create reader");
+    let reader = Reader::new(file).await.expect("Can't create reader");
     let header = reader.header();
     println!("HEADER: {:#?}", header);
     assert_head(header);
