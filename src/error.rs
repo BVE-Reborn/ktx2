@@ -54,3 +54,34 @@ impl fmt::Display for ParseError {
         }
     }
 }
+
+#[derive(Debug)]
+pub enum ReadToError {
+    ReadError(ReadError),
+    BadBuffer(u64),
+}
+
+impl Error for ReadToError {}
+
+impl fmt::Display for ReadToError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Self::ReadError(e) => e.fmt(f),
+            Self::BadBuffer(expect_size) => {
+                write!(f, "Wrong buffer size. Expected: {:?}", expect_size)
+            }
+        }
+    }
+}
+
+impl From<ReadError> for ReadToError {
+    fn from(e: ReadError) -> Self {
+        Self::ReadError(e)
+    }
+}
+
+impl From<io::Error> for ReadToError {
+    fn from(e: io::Error) -> Self {
+        ReadError::IoError(e).into()
+    }
+}

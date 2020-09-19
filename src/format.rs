@@ -2,7 +2,7 @@ use crate::error::ParseError;
 use std::convert::TryFrom;
 
 #[allow(non_camel_case_types)]
-#[derive(FromPrimitive, Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Format {
     VK_FORMAT_UNDEFINED = 0,
     VK_FORMAT_R4G4_UNORM_PACK8 = 1,

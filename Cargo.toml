@@ -9,10 +9,6 @@ edition = "2018"
 [dependencies]
 futures-util = "0.3.5"
 byteorder = "1.3.4"
-async-stream = "0.3.0"
-once_cell = "1.4.1"
-num-traits = "0.2.12"
-num-derive = "0.3.2"
 
 [dependencies.tokio]
 version = "0.2.22"

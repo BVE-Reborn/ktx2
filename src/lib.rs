@@ -1,12 +1,9 @@
-#[macro_use]
-extern crate num_derive;
-
 pub mod error;
 pub mod format;
 
 use crate::format::Format;
 
-use crate::error::{ParseError, ReadError};
+use crate::error::{ParseError, ReadError, ReadToError};
 use byteorder::{ByteOrder, NativeEndian};
 use std::convert::TryInto;
 use std::io::SeekFrom;
@@ -59,13 +56,31 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
     }
 
     pub async fn read_data(&mut self) -> ReadResult<Vec<u8>> {
-        let data_start_byte = self.first_level_offset_bytes();
-        self.input.seek(SeekFrom::Start(data_start_byte)).await?;
         let data_len_bytes = self.data_len_bytes();
         let mut buffer = Vec::new();
         buffer.resize(data_len_bytes as usize, 0);
-        self.input.read_exact(&mut buffer).await?;
-        Ok(buffer)
+        self.read_data_to(&mut buffer)
+            .await
+            .map(|_| buffer)
+            .map_err(|e| match e {
+                ReadToError::ReadError(e) => e,
+                ReadToError::BadBuffer(_) => {
+                    panic!("Pass well sized buffer to read_data_to(), but got BadBuffer error")
+                }
+            })
+    }
+
+    pub async fn read_data_to(&mut self, buf: &mut [u8]) -> ReadToResult<()> {
+        let data_len_bytes = self.data_len_bytes();
+        if buf.len() != data_len_bytes as usize {
+            return Err(ReadToError::BadBuffer(data_len_bytes));
+        }
+
+        let data_start_byte = self.first_level_offset_bytes();
+        self.input.seek(SeekFrom::Start(data_start_byte)).await?;
+
+        self.input.read_exact(buf).await?;
+        Ok(())
     }
 
     fn test_identifier(head_bytes: &HeadBytes) -> ReadResult<()> {
@@ -137,6 +152,7 @@ static KTX2_IDENTIFIER: [u8; 12] = [
 ];
 
 pub type ReadResult<T> = Result<T, ReadError>;
+pub type ReadToResult<T> = Result<T, ReadToError>;
 pub type ParseResult<T> = Result<T, ParseError>;
 
 pub struct TexData {
