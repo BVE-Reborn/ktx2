@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() {
-    let tex_path = get_current_dir();
+    let tex_path = get_texture_path();
     let file = tokio::fs::File::open(tex_path)
         .await
         .expect("Can't open file");
@@ -43,7 +43,7 @@ fn assert_head(header: &Header) {
     assert_eq!(header.supercompression_scheme, 0);
 }
 
-fn get_current_dir() -> PathBuf {
+fn get_texture_path() -> PathBuf {
     let mut current_dir = std::env::current_dir().expect("Can't get current directory");
     current_dir.push("data\\test_tex.ktx2");
     current_dir
