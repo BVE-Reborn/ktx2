@@ -3,6 +3,10 @@ name = "ktx2-reader"
 version = "0.1.0"
 authors = ["f3kilo <f3kilo@yandex.ru>"]
 edition = "2018"
+repository = "https://github.com/F3kilo/ktx2-reader"
+description = "Asynchronously read, validate and parse KTX v.2 texture files"
+readme = "README.md"
+license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
