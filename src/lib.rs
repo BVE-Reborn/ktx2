@@ -10,13 +10,25 @@ use std::io::SeekFrom;
 use tokio::io::AsyncSeek;
 use tokio::prelude::*;
 
+/// Struct to read [`KTX v.2`] files.  
+///
+/// [`KTX v.2`]: https://github.khronos.org/KTX-Specification/
 pub struct Reader<T> {
     input: T,
     head: Header,
     levels_index: Vec<LevelInfo>,
 }
 
+/// Implementation of [Reader](#struct.Reader) struct for async loading.
 impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
+    /// Create new instance of Reader.  
+    /// Asyncroniosly reads and tries [Reader](#struct.Reader) to parse data from `input`.
+    /// # Errors
+    /// If reading fails, returns [`ReadError::IoError`].  
+    /// If parsing fails, returns [`ReadError::ParseError`].
+    ///
+    /// [`ReadError::IoError`]: #enum.ReadError
+    /// [`ReadError::ParseError`]: crate::error::ReadError::ParseError
     pub async fn new(mut input: T) -> ReadResult<Self> {
         let head = Self::read_head(&mut input).await?;
         let levels_index = Self::read_level_index(&mut input, &head).await?;
@@ -27,6 +39,7 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
         })
     }
 
+    /// Reads and tries to parse header of texture.  
     async fn read_head(input: &mut T) -> ReadResult<Header> {
         let mut head_bytes = [0; 48];
         input.read_exact(&mut head_bytes).await?;
@@ -35,6 +48,9 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
         Ok(Header::from_bytes(&head_bytes)?)
     }
 
+    /// Reads and tries to parse level index of texture.  
+    ///
+    /// [Level index](https://github.khronos.org/KTX-Specification/#_level_index) is a description of texture data layout.
     async fn read_level_index(input: &mut T, head: &Header) -> ReadResult<Vec<LevelInfo>> {
         const LEVEL_INDEX_START_BYTE: u64 = 80;
         const LEVEL_INDEX_BYTE_LEN: u32 = 24;
@@ -55,6 +71,9 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
         Ok(infos)
     }
 
+    /// Reads data of texture.  
+    /// Gets vector of bytes. It stores color data of texture.
+    /// Layout of this data can be obtined from [regions_description](#method.regions_description) method of self.
     pub async fn read_data(&mut self) -> ReadResult<Vec<u8>> {
         let data_len_bytes = self.data_len_bytes();
         let mut buffer = Vec::new();
@@ -70,6 +89,9 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
             })
     }
 
+    /// ## Reads data of texture.
+    /// Gets vector of bytes. It stores color data of texture.
+    /// Layout of this data can be obtined from [regions_description](#method.regions_description) method of self.
     pub async fn read_data_to(&mut self, buf: &mut [u8]) -> ReadToResult<()> {
         let data_len_bytes = self.data_len_bytes();
         if buf.len() != data_len_bytes as usize {
