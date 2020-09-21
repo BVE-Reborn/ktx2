@@ -13,10 +13,6 @@ async fn main() {
     println!("Header: {:#?}", header);
     assert_head(header);
 
-    let frames_info = reader.levels_index();
-    println!("Frames info: {:#?}", frames_info);
-    assert_eq!(frames_info.len(), header.level_count.max(1) as usize);
-
     let regions_desc = reader.regions_description();
     println!("Regions: {:#?}", regions_desc);
     assert_eq!(regions_desc.len(), header.level_count.max(1) as usize);

@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::{fmt, io};
 
+/// Error while reading data.
 #[derive(Debug)]
 pub enum ReadError {
     IoError(io::Error),
@@ -30,13 +31,20 @@ impl From<ParseError> for ReadError {
     }
 }
 
+/// Error, that happend when data doesn't satisfy expected parameters.
 #[derive(Debug)]
 pub enum ParseError {
+    /// Unexpected texture identifier.
     BadIdentifier([u8; 12]),
+    /// Specified format is not supported.
     BadFormat(u32),
+    /// Type size of texture is zero.
     ZeroTypeSize,
+    /// Width of texture is zero.
     ZeroWidth,
+    /// Face count of texture is zero.
     ZeroFaceCount,
+    /// Found unsupported feature.
     UnsupportedFeature(&'static str),
 }
 
@@ -55,6 +63,7 @@ impl fmt::Display for ParseError {
     }
 }
 
+/// Error, that happened when reader can't read data to client's buffer.
 #[derive(Debug)]
 pub enum ReadToError {
     ReadError(ReadError),
