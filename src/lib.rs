@@ -10,9 +10,7 @@ use crate::format::Format;
 use crate::error::{ParseError, ReadError, ReadToError};
 use byteorder::{ByteOrder, NativeEndian};
 use std::convert::TryInto;
-use std::io::SeekFrom;
-use tokio::io::AsyncSeek;
-use tokio::prelude::*;
+use std::io::{Read, Seek, SeekFrom};
 
 /// Struct to read [`KTX v.2`] files.  
 ///
@@ -22,9 +20,7 @@ pub struct Reader<T> {
     head: Header,
     levels_index: Vec<LevelIndex>,
 }
-
-/// Implementation of [Reader](struct.Reader.html) struct for async loading.
-impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
+impl<T: Read + Seek + Unpin> Reader<T> {
     /// Create new instance of Reader.  
     /// Asyncroniosly reads and tries to parse data from `input`.
     /// # Errors
@@ -33,9 +29,9 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
     ///
     /// [`ReadError::IoError`]: error/enum.ReadError.html#variant.IoError
     /// [`ReadError::ParseError`]: error/enum.ReadError.html#variant.ParseError
-    pub async fn new(mut input: T) -> ReadResult<Self> {
-        let head = Self::read_head(&mut input).await?;
-        let levels_index = Self::read_level_index(&mut input, &head).await?;
+    pub fn new(mut input: T) -> ReadResult<Self> {
+        let head = Self::read_head(&mut input)?;
+        let levels_index = Self::read_level_index(&mut input, &head)?;
         Ok(Self {
             input,
             head,
@@ -44,9 +40,9 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
     }
 
     /// Reads and tries to parse header of texture.  
-    async fn read_head(input: &mut T) -> ReadResult<Header> {
+    fn read_head(input: &mut T) -> ReadResult<Header> {
         let mut head_bytes = [0; 48];
-        input.read_exact(&mut head_bytes).await?;
+        input.read_exact(&mut head_bytes)?;
         Self::test_identifier(&head_bytes)?;
 
         Ok(Header::from_bytes(&head_bytes)?)
@@ -55,15 +51,15 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
     /// Reads and tries to parse level index of texture.  
     ///
     /// [Level index](https://github.khronos.org/KTX-Specification/#_level_index) is a description of texture data layout.
-    async fn read_level_index(input: &mut T, head: &Header) -> ReadResult<Vec<LevelIndex>> {
+    fn read_level_index(input: &mut T, head: &Header) -> ReadResult<Vec<LevelIndex>> {
         const LEVEL_INDEX_START_BYTE: u64 = 80;
         const LEVEL_INDEX_BYTE_LEN: u32 = 24;
         let level_count = head.level_count.max(1);
         let level_index_bytes_len = level_count * LEVEL_INDEX_BYTE_LEN;
         let mut level_index_bytes: Vec<u8> = (0..level_index_bytes_len).map(|_| 0u8).collect();
 
-        input.seek(SeekFrom::Start(LEVEL_INDEX_START_BYTE)).await?;
-        input.read_exact(&mut level_index_bytes).await?;
+        input.seek(SeekFrom::Start(LEVEL_INDEX_START_BYTE))?;
+        input.read_exact(&mut level_index_bytes)?;
         let mut infos = Vec::with_capacity(level_count as usize);
         for level_index in 0..level_count {
             let start_byte = (level_index * LEVEL_INDEX_BYTE_LEN) as usize;
@@ -75,15 +71,11 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
         Ok(infos)
     }
 
-    /// Reads data of texture.  
-    /// Gets vector of bytes. It stores color data of texture.
-    /// Layout of this data can be obtined from [`regions_description()`](#method.regions_description) method of self.
-    pub async fn read_data(&mut self) -> ReadResult<Vec<u8>> {
+    pub fn read_data(&mut self) -> ReadResult<Vec<u8>> {
         let data_len_bytes = self.data_len_bytes();
         let mut buffer = Vec::new();
         buffer.resize(data_len_bytes as usize, 0);
         self.read_data_to(&mut buffer)
-            .await
             .map(|_| buffer)
             .map_err(|e| match e {
                 ReadToError::ReadError(e) => e,
@@ -97,16 +89,16 @@ impl<T: AsyncRead + AsyncSeek + Unpin> Reader<T> {
     /// Reads texture data to `buf`.
     /// Layout of this data can be obtined from [`regions_description()`](#method.regions_description) method of self.  
     /// Size of `buf` **MUST** be equal to expected data size. It can be obtained with [`data_len_bytes()`](#method.data_len_bytes) method.
-    pub async fn read_data_to(&mut self, buf: &mut [u8]) -> ReadToResult<()> {
+    pub fn read_data_to(&mut self, buf: &mut [u8]) -> ReadToResult<()> {
         let data_len_bytes = self.data_len_bytes();
         if buf.len() != data_len_bytes as usize {
             return Err(ReadToError::BadBuffer(data_len_bytes));
         }
 
         let data_start_byte = self.first_level_offset_bytes();
-        self.input.seek(SeekFrom::Start(data_start_byte)).await?;
+        self.input.seek(SeekFrom::Start(data_start_byte))?;
 
-        self.input.read_exact(buf).await?;
+        self.input.read_exact(buf)?;
         Ok(())
     }
 
