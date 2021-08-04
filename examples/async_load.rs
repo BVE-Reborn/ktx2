@@ -5,10 +5,8 @@ use std::path::PathBuf;
 #[tokio::main]
 async fn main() {
     let tex_path = get_texture_path();
-    let file = tokio::fs::File::open(tex_path)
-        .await
-        .expect("Can't open file");
-    let mut reader = Reader::new(file).await.expect("Can't create reader");
+    let file = tokio::fs::read(tex_path).await.expect("Can't open file");
+    let reader = Reader::new(&*file).expect("Can't create reader");
     let header = reader.header();
     println!("Header: {:#?}", header);
     assert_head(header);
@@ -17,13 +15,13 @@ async fn main() {
     println!("Regions: {:#?}", regions_desc);
     assert_eq!(regions_desc.len(), header.level_count.max(1) as usize);
 
-    let data = reader.read_data().await.expect("Can't read data");
+    let data = reader.read_data().expect("Can't read data");
     println!("Data len: {:?}", data.len());
     test_data(data, &regions_desc);
     return;
 }
 
-fn test_data(dat: Vec<u8>, info: &[RegionDescription]) {
+fn test_data(dat: &[u8], info: &[RegionDescription]) {
     for region in info {
         let offset = region.offset_bytes as usize;
         let bytes = &dat[offset..offset + 4];
@@ -31,7 +29,7 @@ fn test_data(dat: Vec<u8>, info: &[RegionDescription]) {
     }
 }
 
-fn assert_head(header: &Header) {
+fn assert_head(header: Header) {
     assert_eq!(header.format, Format::VK_FORMAT_R8G8B8A8_UINT);
     assert_eq!(header.type_size, 1);
     assert_eq!(header.base_width, 1024);
