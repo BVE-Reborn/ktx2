@@ -11,8 +11,6 @@ pub enum ParseError {
     ZeroWidth,
     /// Face count of texture is zero.
     ZeroFaceCount,
-    /// Found unsupported feature.
-    UnsupportedFeature(&'static str),
 }
 
 #[cfg(feature = "std")]
@@ -24,7 +22,6 @@ impl fmt::Display for ParseError {
             ParseError::BadIdentifier(id) => write!(f, "Identifier is wrong: {:?}", id),
             ParseError::ZeroWidth => write!(f, "Width is zero"),
             ParseError::ZeroFaceCount => write!(f, "Face count is zero"),
-            ParseError::UnsupportedFeature(name) => write!(f, "Loader doesn't support: {}", name),
         }
     }
 }

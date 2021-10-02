@@ -8,11 +8,11 @@
 #[cfg(feature = "std")]
 extern crate std;
 
+mod enums;
 mod error;
-mod format;
 
+pub use crate::enums::{Format, SupercompressionScheme};
 pub use crate::error::ParseError;
-pub use crate::format::Format;
 
 use core::convert::TryInto;
 
@@ -143,7 +143,7 @@ pub struct Header {
     pub layer_count: u32,
     pub face_count: u32,
     pub level_count: u32,
-    pub supercompression_scheme: u32,
+    pub supercompression_scheme: Option<SupercompressionScheme>,
 }
 
 impl Header {
@@ -158,7 +158,9 @@ impl Header {
             layer_count: u32::from_le_bytes(data[32..36].try_into().unwrap()),
             face_count: Self::parse_face_count(&data[36..40])?,
             level_count: u32::from_le_bytes(data[40..44].try_into().unwrap()),
-            supercompression_scheme: Self::parse_supercompression_scheme(&data[44..48])?,
+            supercompression_scheme: SupercompressionScheme::new(u32::from_le_bytes(
+                data[44..48].try_into().unwrap(),
+            )),
         })
     }
 
@@ -175,14 +177,6 @@ impl Header {
         match result {
             0 => Err(ParseError::ZeroFaceCount),
             _ => Ok(result),
-        }
-    }
-
-    fn parse_supercompression_scheme(data: &[u8]) -> ParseResult<u32> {
-        let result = u32::from_le_bytes(data[0..4].try_into().unwrap());
-        match result {
-            0 => Ok(0),
-            _ => Err(ParseError::UnsupportedFeature("supercompression scheme")),
         }
     }
 }

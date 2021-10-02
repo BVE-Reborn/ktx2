@@ -25,7 +25,7 @@ macro_rules! pseudo_enum {
                 };
                 match name {
                     Some(name) => f.pad(name),
-                    None => write!(f, "<unknown format {}>", self.0.get()),
+                    None => write!(f, concat!(stringify!($name), "({})"), self.0.get()),
                 }
             }
         }
@@ -188,5 +188,13 @@ pseudo_enum! {
         ASTC_12x10_SRGB_BLOCK = 182,
         ASTC_12x12_UNORM_BLOCK = 183,
         ASTC_12x12_SRGB_BLOCK = 184,
+    }
+}
+
+pseudo_enum! {
+    SupercompressionScheme {
+        BasisLZ = 1,
+        Zstandard = 2,
+        ZLIB = 3,
     }
 }

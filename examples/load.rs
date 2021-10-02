@@ -36,7 +36,7 @@ fn assert_head(header: Header) {
     assert_eq!(header.layer_count, 0);
     assert_eq!(header.face_count, 1);
     assert_eq!(header.level_count, 11);
-    assert_eq!(header.supercompression_scheme, 0);
+    assert_eq!(header.supercompression_scheme, None);
 }
 
 fn get_texture_path() -> PathBuf {
