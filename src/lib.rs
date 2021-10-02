@@ -88,14 +88,13 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         self.head
     }
 
-    /// Returns vector of [`Level`](struct.Level.html) for texture.
-    pub fn levels(&self) -> Vec<Level> {
+    /// Iterator over the texture's mip levels.
+    pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
         let base_offset = self.first_level_offset_bytes();
         self.levels_index
             .iter()
             .enumerate()
-            .map(|(i, level)| self.level_from_level_index(i, level.offset - base_offset))
-            .collect()
+            .map(move |(i, level)| self.level_from_level_index(i, level.offset - base_offset))
     }
 
     /// Start of texture data oofset in bytes.

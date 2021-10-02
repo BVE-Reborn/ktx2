@@ -10,7 +10,7 @@ fn main() {
     println!("Header: {:#?}", header);
     assert_head(header);
 
-    let levels = reader.levels();
+    let levels = reader.levels().collect::<Vec<_>>();
     println!("levels: {:#?}", levels);
     assert_eq!(levels.len(), header.level_count.max(1) as usize);
 
