@@ -1,7 +1,6 @@
-//! Reading, validating and parsing of [`KTX v.2`] files.  
-//! **Currently SUPER COMPRESSION is NOT supported.**
+//! [KTX2] decoding. Start with a [`Reader`].
 //!
-//! [`KTX v.2`]: https://github.khronos.org/KTX-Specification/
+//! [KTX2]: https://github.khronos.org/KTX-Specification/
 
 #![no_std]
 
@@ -16,18 +15,14 @@ pub use crate::error::ParseError;
 
 use core::convert::TryInto;
 
-/// Struct to read [`KTX v.2`] files.  
-///
-/// [`KTX v.2`]: https://github.khronos.org/KTX-Specification/
+/// Decodes KTX2 texture data
 pub struct Reader<Data: AsRef<[u8]>> {
     input: Data,
     head: Header,
 }
+
 impl<Data: AsRef<[u8]>> Reader<Data> {
-    /// Create new instance of Reader.  
-    /// Asyncroniosly reads and tries to parse data from `input`.
-    /// # Errors
-    /// If parsing fails, returns [`ParseError`].
+    /// Decode KTX2 data from `input`
     pub fn new(input: Data) -> Result<Self, ParseError> {
         let head = Self::read_head(input.as_ref())?;
         let result = Self { input, head };
@@ -91,12 +86,12 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         Err(ParseError::BadMagic(*ident_bytes))
     }
 
-    /// Returns [`Header`] of texture.
+    /// Container-level metadata
     pub fn header(&self) -> Header {
         self.head
     }
 
-    /// Iterator over the texture's mip levels.
+    /// Iterator over the texture's mip levels
     pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
         let base_offset = self.first_level_offset_bytes();
         self.level_index()
@@ -105,7 +100,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             .map(move |(i, level)| self.level_from_level_index(i, level.offset - base_offset))
     }
 
-    /// Start of texture data oofset in bytes.
+    /// Start of texture data offset in bytes
     fn first_level_offset_bytes(&self) -> u64 {
         self.level_index()
             .unwrap()
@@ -155,7 +150,7 @@ const KTX2_IDENTIFIER: [u8; 12] = [
 /// Result of parsing data operation.
 type ParseResult<T> = Result<T, ParseError>;
 
-/// Header of texture. Contains general information.
+/// Container-level metadata
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Header {
     pub format: Option<Format>,

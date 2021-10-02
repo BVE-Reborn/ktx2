@@ -33,7 +33,7 @@ macro_rules! pseudo_enum {
 }
 
 pseudo_enum! {
-    /// Enum of supported texture formats.
+    /// Known texture formats
     Format {
         R4G4_UNORM_PACK8 = 1,
         R4G4B4A4_UNORM_PACK16 = 2,
@@ -192,6 +192,7 @@ pseudo_enum! {
 }
 
 pseudo_enum! {
+    /// Known supercompression schemes
     SupercompressionScheme {
         BasisLZ = 1,
         Zstandard = 2,
