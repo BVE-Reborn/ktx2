@@ -16,7 +16,6 @@ use std::convert::TryInto;
 pub struct Reader<Data: AsRef<[u8]>> {
     input: Data,
     head: Header,
-    levels_index: Vec<LevelIndex>,
 }
 impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Create new instance of Reader.  
@@ -25,12 +24,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// If parsing fails, returns [`ParseError`].
     pub fn new(input: Data) -> ParseResult<Self> {
         let head = Self::read_head(input.as_ref())?;
-        let levels_index = Self::read_level_index(input.as_ref(), &head)?;
-        Ok(Self {
-            input,
-            head,
-            levels_index,
-        })
+        Ok(Self { input, head })
     }
 
     /// Reads and tries to parse header of texture.  
@@ -40,27 +34,16 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         Ok(Header::from_bytes(head_bytes)?)
     }
 
-    /// Reads and tries to parse level index of texture.  
-    ///
-    /// [Level index](https://github.khronos.org/KTX-Specification/#_level_index) is a description of texture data layout.
-    fn read_level_index(input: &[u8], head: &Header) -> ParseResult<Vec<LevelIndex>> {
+    fn level_index(&self) -> impl ExactSizeIterator<Item = LevelIndex> + '_ {
         const LEVEL_INDEX_START_BYTE: usize = 80;
         const LEVEL_INDEX_BYTE_LEN: usize = 24;
-        let level_count = head.level_count.max(1);
+        let level_count = self.head.level_count.max(1) as usize;
 
-        let level_index_end_byte =
-            LEVEL_INDEX_START_BYTE + level_count as usize * LEVEL_INDEX_BYTE_LEN;
-        let level_index_bytes = &input[LEVEL_INDEX_START_BYTE..level_index_end_byte];
-
-        let mut infos = Vec::with_capacity(level_count as usize);
-        for level_index in 0..level_count {
-            let start_byte = level_index as usize * LEVEL_INDEX_BYTE_LEN;
-            let end_byte = start_byte + LEVEL_INDEX_BYTE_LEN as usize;
-            infos.push(LevelIndex::from_bytes(
-                &level_index_bytes[start_byte..end_byte],
-            ))
-        }
-        Ok(infos)
+        let level_index_end_byte = LEVEL_INDEX_START_BYTE + level_count * LEVEL_INDEX_BYTE_LEN;
+        let level_index_bytes = &self.input.as_ref()[LEVEL_INDEX_START_BYTE..level_index_end_byte];
+        level_index_bytes
+            .chunks_exact(LEVEL_INDEX_BYTE_LEN)
+            .map(LevelIndex::from_bytes)
     }
 
     pub fn read_data(&self) -> ParseResult<&[u8]> {
@@ -90,16 +73,14 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Iterator over the texture's mip levels.
     pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
         let base_offset = self.first_level_offset_bytes();
-        self.levels_index
-            .iter()
+        self.level_index()
             .enumerate()
             .map(move |(i, level)| self.level_from_level_index(i, level.offset - base_offset))
     }
 
     /// Start of texture data oofset in bytes.
     fn first_level_offset_bytes(&self) -> u64 {
-        self.levels_index
-            .iter()
+        self.level_index()
             .map(|l| l.offset)
             .min()
             .expect("No levels got, but read some on constructing")
@@ -107,9 +88,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 
     /// Last (by data offset) level in texture data.
     fn last_level(&self) -> LevelIndex {
-        *self
-            .levels_index
-            .iter()
+        self.level_index()
             .max_by_key(|l| l.offset)
             .expect("No levels got, but read some on constructing")
     }
