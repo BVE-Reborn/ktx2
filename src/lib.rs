@@ -82,10 +82,11 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Iterator over the texture's mip levels
     pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
         let base_offset = self.first_level_offset_bytes();
+        let header = self.header();
         self.level_index()
             .unwrap()
             .enumerate()
-            .map(move |(i, level)| self.level_from_level_index(i, level.offset - base_offset))
+            .map(move |(i, level)| header.level_info(i as u32, level.offset - base_offset))
     }
 
     /// Start of texture data offset in bytes
@@ -110,23 +111,6 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         let start_offset = self.first_level_offset_bytes();
         let last_level = self.last_level();
         last_level.offset + last_level.uncompressed_length_bytes - start_offset
-    }
-
-    /// Crates level from level info.
-    fn level_from_level_index(&self, i: usize, offset: u64) -> Level {
-        let header = self.header();
-        Level {
-            layer_count: header.layer_count.max(1) * header.face_count,
-            offset_bytes: offset,
-            width: Self::level_size(header.pixel_width, i as u32),
-            height: Self::level_size(header.pixel_height, i as u32),
-            depth: Self::level_size(header.pixel_depth, i as u32),
-        }
-    }
-
-    /// Size in pixels of `level`, with `base` size.
-    fn level_size(base: u32, level: u32) -> u32 {
-        (base >> level).max(1)
     }
 }
 
@@ -177,6 +161,21 @@ impl Header {
             return Err(ParseError::ZeroFaceCount);
         }
         Ok(())
+    }
+
+    fn level_info(&self, i: u32, offset: u64) -> Level {
+        /// Size in pixels of `level`, with `base` size.
+        fn level_size(base: u32, level: u32) -> u32 {
+            (base >> level).max(1)
+        }
+
+        Level {
+            layer_count: self.layer_count.max(1) * self.face_count,
+            offset_bytes: offset,
+            width: level_size(self.pixel_width, i as u32),
+            height: level_size(self.pixel_height, i as u32),
+            depth: level_size(self.pixel_depth, i as u32),
+        }
     }
 }
 
