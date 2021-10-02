@@ -14,7 +14,7 @@ fn main() {
     println!("levels: {:#?}", levels);
     assert_eq!(levels.len(), header.level_count.max(1) as usize);
 
-    let data = reader.read_data().expect("Can't read data");
+    let data = reader.data();
     println!("Data len: {:?}", data.len());
     test_data(data, &levels);
 }

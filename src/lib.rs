@@ -32,6 +32,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         let head = Self::read_head(input.as_ref())?;
         let result = Self { input, head };
         result.level_index()?; // Check index integrity
+        result.read_data()?; // Check level integrity
         Ok(result)
     }
 
@@ -62,7 +63,12 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             .map(LevelIndex::from_bytes))
     }
 
-    pub fn read_data(&self) -> ParseResult<&[u8]> {
+    /// Access texture data
+    pub fn data(&self) -> &[u8] {
+        self.read_data().unwrap()
+    }
+
+    fn read_data(&self) -> ParseResult<&[u8]> {
         let data_len_bytes = self.data_len_bytes() as usize;
 
         let data_start_byte = self.first_level_offset_bytes() as usize;
