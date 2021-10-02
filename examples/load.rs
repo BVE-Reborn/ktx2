@@ -20,10 +20,10 @@ fn main() {
 }
 
 fn test_data(dat: &[u8], info: &[Level]) {
-    for region in info {
+    for (i, region) in info.iter().enumerate() {
         let offset = region.offset_bytes as usize;
         let bytes = &dat[offset..offset + 4];
-        println!("Bytes for level {:?}: {:?}", region.level, bytes);
+        println!("Bytes for level {:?}: {:?}", i, bytes);
     }
 }
 

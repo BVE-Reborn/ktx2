@@ -116,7 +116,6 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     fn level_from_level_index(&self, i: usize, offset: u64) -> Level {
         let header = self.header();
         Level {
-            level: i as u32,
             layer_count: header.layer_count.max(1) * header.face_count,
             offset_bytes: offset,
             width: Self::level_size(header.pixel_width, i as u32),
@@ -201,7 +200,6 @@ impl LevelIndex {
 /// Metadata describing a particular mipmap level
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Level {
-    pub level: u32,
     pub layer_count: u32,
     pub offset_bytes: u64,
     pub width: u32,
