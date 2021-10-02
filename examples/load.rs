@@ -2,10 +2,9 @@ use ktx2_reader::Format;
 use ktx2_reader::{Header, Reader, RegionDescription};
 use std::path::PathBuf;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let tex_path = get_texture_path();
-    let file = tokio::fs::read(tex_path).await.expect("Can't open file");
+    let file = std::fs::read(tex_path).expect("Can't open file");
     let reader = Reader::new(&*file).expect("Can't create reader");
     let header = reader.header();
     println!("Header: {:#?}", header);
