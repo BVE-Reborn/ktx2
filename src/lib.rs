@@ -206,12 +206,11 @@ impl Header {
 /// Array, that stores data of start of texture.
 type HeadBytes<'a> = &'a [u8; 48];
 
-/// Struct, that contains size and offset information about levels.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 struct LevelIndex {
-    pub offset: u64,
-    pub length_bytes: u64,
-    pub uncompressed_length_bytes: u64,
+    offset: u64,
+    length_bytes: u64,
+    uncompressed_length_bytes: u64,
 }
 
 impl LevelIndex {
