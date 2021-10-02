@@ -27,9 +27,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             return Err(ParseError::UnexpectedEnd);
         }
         if !input.as_ref().starts_with(&KTX2_MAGIC) {
-            return Err(ParseError::BadMagic(
-                input.as_ref()[0..KTX2_MAGIC.len()].try_into().unwrap(),
-            ));
+            return Err(ParseError::BadMagic);
         }
         let header = input.as_ref()[0..48].try_into().unwrap();
         Header::from_bytes(header).validate()?;

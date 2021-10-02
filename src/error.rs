@@ -7,7 +7,7 @@ use std::error::Error;
 #[non_exhaustive]
 pub enum ParseError {
     /// Unexpected magic numbers
-    BadMagic([u8; 12]),
+    BadMagic,
     /// Zero pixel width
     ZeroWidth,
     /// Zero face count
@@ -22,7 +22,7 @@ impl Error for ParseError {}
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self {
-            ParseError::BadMagic(id) => write!(f, "unexpected magic numbers {:x?}", id),
+            ParseError::BadMagic => f.pad("unexpected magic numbers"),
             ParseError::ZeroWidth => f.pad("zero pixel width"),
             ParseError::ZeroFaceCount => f.pad("zero face count"),
             ParseError::UnexpectedEnd => f.pad("unexpected end of buffer"),
