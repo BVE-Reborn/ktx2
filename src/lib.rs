@@ -122,8 +122,8 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             .expect("No levels got, but read some on constructing")
     }
 
-    /// Full length of texture data.
-    pub fn data_len_bytes(&self) -> u64 {
+    /// Full length of texture data
+    fn data_len_bytes(&self) -> u64 {
         let start_offset = self.first_level_offset_bytes();
         let last_level = self.last_level();
         last_level.offset + last_level.uncompressed_length_bytes - start_offset
@@ -170,8 +170,7 @@ pub struct Header {
 }
 
 impl Header {
-    /// Crates Header from bytes array.
-    pub fn from_bytes(data: HeadBytes) -> ParseResult<Self> {
+    fn from_bytes(data: HeadBytes) -> ParseResult<Self> {
         Ok(Self {
             format: Format::new(u32::from_le_bytes(data[12..16].try_into().unwrap())),
             type_size: u32::from_le_bytes(data[16..20].try_into().unwrap()),
