@@ -2,13 +2,19 @@
 //! **Currently SUPER COMPRESSION is NOT supported.**
 //!
 //! [`KTX v.2`]: https://github.khronos.org/KTX-Specification/
+
+#![no_std]
+
+#[cfg(feature = "std")]
+extern crate std;
+
 mod error;
 mod format;
 
 pub use crate::error::ParseError;
 pub use crate::format::Format;
 
-use std::convert::TryInto;
+use core::convert::TryInto;
 
 /// Struct to read [`KTX v.2`] files.  
 ///

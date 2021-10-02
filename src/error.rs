@@ -1,5 +1,6 @@
+use core::fmt;
+#[cfg(feature = "std")]
 use std::error::Error;
-use std::fmt;
 
 /// Error, that happend when data doesn't satisfy expected parameters.
 #[derive(Debug)]
@@ -16,6 +17,7 @@ pub enum ParseError {
     UnsupportedFeature(&'static str),
 }
 
+#[cfg(feature = "std")]
 impl Error for ParseError {}
 
 impl fmt::Display for ParseError {

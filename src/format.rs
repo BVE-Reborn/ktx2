@@ -1,5 +1,5 @@
 use crate::error::ParseError;
-use std::convert::TryFrom;
+use core::convert::TryFrom;
 
 /// Enum of supported texture formats.
 #[allow(non_camel_case_types)]
