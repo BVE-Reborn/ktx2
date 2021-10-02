@@ -8,7 +8,6 @@ mod format;
 pub use crate::error::ParseError;
 pub use crate::format::Format;
 
-use byteorder::{ByteOrder, LittleEndian};
 use std::convert::TryInto;
 
 /// Struct to read [`KTX v.2`] files.  
@@ -165,24 +164,24 @@ pub struct Header {
 impl Header {
     /// Crates Header from bytes array.
     pub fn from_bytes(data: HeadBytes) -> ParseResult<Self> {
-        let format_id = LittleEndian::read_u32(&data[12..16]);
+        let format_id = u32::from_le_bytes(data[12..16].try_into().unwrap());
         let format = format_id.try_into()?;
 
         Ok(Self {
             format,
-            type_size: LittleEndian::read_u32(&data[16..20]),
+            type_size: u32::from_le_bytes(data[16..20].try_into().unwrap()),
             pixel_width: Self::parse_pixel_width(&data[20..24])?,
-            pixel_height: LittleEndian::read_u32(&data[24..28]),
-            pixel_depth: LittleEndian::read_u32(&data[28..32]),
-            layer_count: LittleEndian::read_u32(&data[32..36]),
+            pixel_height: u32::from_le_bytes(data[24..28].try_into().unwrap()),
+            pixel_depth: u32::from_le_bytes(data[28..32].try_into().unwrap()),
+            layer_count: u32::from_le_bytes(data[32..36].try_into().unwrap()),
             face_count: Self::parse_face_count(&data[36..40])?,
-            level_count: LittleEndian::read_u32(&data[40..44]),
+            level_count: u32::from_le_bytes(data[40..44].try_into().unwrap()),
             supercompression_scheme: Self::parse_supercompression_scheme(&data[44..48])?,
         })
     }
 
     fn parse_pixel_width(data: &[u8]) -> ParseResult<u32> {
-        let result = LittleEndian::read_u32(&data[0..4]);
+        let result = u32::from_le_bytes(data[0..4].try_into().unwrap());
         match result {
             0 => Err(ParseError::ZeroWidth),
             _ => Ok(result),
@@ -190,7 +189,7 @@ impl Header {
     }
 
     fn parse_face_count(data: &[u8]) -> ParseResult<u32> {
-        let result = LittleEndian::read_u32(&data[0..4]);
+        let result = u32::from_le_bytes(data[0..4].try_into().unwrap());
         match result {
             0 => Err(ParseError::ZeroFaceCount),
             _ => Ok(result),
@@ -198,7 +197,7 @@ impl Header {
     }
 
     fn parse_supercompression_scheme(data: &[u8]) -> ParseResult<u32> {
-        let result = LittleEndian::read_u32(&data[0..4]);
+        let result = u32::from_le_bytes(data[0..4].try_into().unwrap());
         match result {
             0 => Ok(0),
             _ => Err(ParseError::UnsupportedFeature("supercompression scheme")),
@@ -220,9 +219,9 @@ struct LevelIndex {
 impl LevelIndex {
     pub fn from_bytes(data: &[u8]) -> Self {
         Self {
-            offset: LittleEndian::read_u64(&data[0..8]),
-            length_bytes: LittleEndian::read_u64(&data[8..16]),
-            uncompressed_length_bytes: LittleEndian::read_u64(&data[16..24]),
+            offset: u64::from_le_bytes(data[0..8].try_into().unwrap()),
+            length_bytes: u64::from_le_bytes(data[8..16].try_into().unwrap()),
+            uncompressed_length_bytes: u64::from_le_bytes(data[16..24].try_into().unwrap()),
         }
     }
 }
