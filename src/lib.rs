@@ -30,26 +30,36 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// If parsing fails, returns [`ParseError`].
     pub fn new(input: Data) -> ParseResult<Self> {
         let head = Self::read_head(input.as_ref())?;
-        Ok(Self { input, head })
+        let result = Self { input, head };
+        result.level_index()?; // Check index integrity
+        Ok(result)
     }
 
     /// Reads and tries to parse header of texture.  
     fn read_head(input: &[u8]) -> ParseResult<Header> {
-        let head_bytes: HeadBytes = input[0..48].try_into().unwrap();
+        let head_bytes: HeadBytes = input
+            .get(0..48)
+            .ok_or(ParseError::UnexpectedEnd)?
+            .try_into()
+            .unwrap();
         Self::test_identifier(head_bytes)?;
         Ok(Header::from_bytes(head_bytes)?)
     }
 
-    fn level_index(&self) -> impl ExactSizeIterator<Item = LevelIndex> + '_ {
+    fn level_index(&self) -> ParseResult<impl ExactSizeIterator<Item = LevelIndex> + '_> {
         const LEVEL_INDEX_START_BYTE: usize = 80;
         const LEVEL_INDEX_BYTE_LEN: usize = 24;
         let level_count = self.head.level_count.max(1) as usize;
 
         let level_index_end_byte = LEVEL_INDEX_START_BYTE + level_count * LEVEL_INDEX_BYTE_LEN;
-        let level_index_bytes = &self.input.as_ref()[LEVEL_INDEX_START_BYTE..level_index_end_byte];
-        level_index_bytes
+        let level_index_bytes = self
+            .input
+            .as_ref()
+            .get(LEVEL_INDEX_START_BYTE..level_index_end_byte)
+            .ok_or(ParseError::UnexpectedEnd)?;
+        Ok(level_index_bytes
             .chunks_exact(LEVEL_INDEX_BYTE_LEN)
-            .map(LevelIndex::from_bytes)
+            .map(LevelIndex::from_bytes))
     }
 
     pub fn read_data(&self) -> ParseResult<&[u8]> {
@@ -80,6 +90,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
         let base_offset = self.first_level_offset_bytes();
         self.level_index()
+            .unwrap()
             .enumerate()
             .map(move |(i, level)| self.level_from_level_index(i, level.offset - base_offset))
     }
@@ -87,6 +98,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Start of texture data oofset in bytes.
     fn first_level_offset_bytes(&self) -> u64 {
         self.level_index()
+            .unwrap()
             .map(|l| l.offset)
             .min()
             .expect("No levels got, but read some on constructing")
@@ -95,6 +107,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Last (by data offset) level in texture data.
     fn last_level(&self) -> LevelIndex {
         self.level_index()
+            .unwrap()
             .max_by_key(|l| l.offset)
             .expect("No levels got, but read some on constructing")
     }

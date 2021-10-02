@@ -11,6 +11,8 @@ pub enum ParseError {
     ZeroWidth,
     /// Face count of texture is zero.
     ZeroFaceCount,
+    /// Unexpected end of buffer
+    UnexpectedEnd,
 }
 
 #[cfg(feature = "std")]
@@ -22,6 +24,7 @@ impl fmt::Display for ParseError {
             ParseError::BadIdentifier(id) => write!(f, "Identifier is wrong: {:?}", id),
             ParseError::ZeroWidth => write!(f, "Width is zero"),
             ParseError::ZeroFaceCount => write!(f, "Face count is zero"),
+            ParseError::UnexpectedEnd => f.pad("unexpected end of buffer"),
         }
     }
 }
