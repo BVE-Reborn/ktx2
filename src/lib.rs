@@ -67,7 +67,11 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 
         let data_start_byte = self.first_level_offset_bytes() as usize;
         let data_end_byte = data_start_byte + data_len_bytes;
-        Ok(&self.input.as_ref()[data_start_byte..data_end_byte])
+        Ok(&self
+            .input
+            .as_ref()
+            .get(data_start_byte..data_end_byte)
+            .ok_or(ParseError::UnexpectedEnd)?)
     }
 
     /// Tests first 12 bytes of input. If identifier is wrong,
