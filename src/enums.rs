@@ -4,7 +4,7 @@ use core::num::NonZeroU32;
 macro_rules! pseudo_enum {
     ($(#[$attr:meta])* $name:ident { $($case:ident = $value:literal,)* }) => {
         $(#[$attr])*
-        #[derive(Copy, Clone, Eq, PartialEq)]
+        #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
         pub struct $name(pub NonZeroU32);
         #[allow(non_upper_case_globals)]
         impl $name {
