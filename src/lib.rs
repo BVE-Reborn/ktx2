@@ -154,7 +154,7 @@ pub struct Header {
 }
 
 impl Header {
-    fn from_bytes(data: HeadBytes) -> Self {
+    fn from_bytes(data: &[u8; 48]) -> Self {
         Self {
             format: Format::new(u32::from_le_bytes(data[12..16].try_into().unwrap())),
             type_size: u32::from_le_bytes(data[16..20].try_into().unwrap()),
@@ -180,9 +180,6 @@ impl Header {
         Ok(())
     }
 }
-
-/// Array, that stores data of start of texture.
-type HeadBytes<'a> = &'a [u8; 48];
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 struct LevelIndex {
