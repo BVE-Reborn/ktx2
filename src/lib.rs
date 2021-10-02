@@ -74,7 +74,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 
     /// Tests first 12 bytes of input. If identifier is wrong,
     /// returns [`ParseError`]
-    /// with [`ParseError::BadIdentifier`](error/enum.ParseError.html#variant.BadIdentifier).
+    /// with [`ParseError::BadIdentifier`].
     fn test_identifier(head_bytes: HeadBytes<'_>) -> ParseResult<()> {
         let ident_bytes: &[u8; 12] = head_bytes[0..12].try_into().unwrap();
         if ident_bytes == &KTX2_IDENTIFIER {
@@ -83,7 +83,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         Err(ParseError::BadIdentifier(*ident_bytes))
     }
 
-    /// Returns [`Header`](struct.Header.html) of texture.
+    /// Returns [`Header`] of texture.
     pub fn header(&self) -> Header {
         self.head
     }
