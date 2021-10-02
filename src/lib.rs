@@ -88,13 +88,13 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         self.head
     }
 
-    /// Returns vector of [`RegionDescription`](struct.RegionDescription.html) for texture.
-    pub fn regions_description(&self) -> Vec<RegionDescription> {
+    /// Returns vector of [`Level`](struct.Level.html) for texture.
+    pub fn levels(&self) -> Vec<Level> {
         let base_offset = self.first_level_offset_bytes();
         self.levels_index
             .iter()
             .enumerate()
-            .map(|(i, level)| self.region_from_level_index(i, level.offset - base_offset))
+            .map(|(i, level)| self.level_from_level_index(i, level.offset - base_offset))
             .collect()
     }
 
@@ -123,9 +123,9 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         last_level.offset + last_level.uncompressed_length_bytes - start_offset
     }
 
-    /// Crates region info from level info.
-    fn region_from_level_index(&self, i: usize, offset: u64) -> RegionDescription {
-        RegionDescription {
+    /// Crates level from level info.
+    fn level_from_level_index(&self, i: usize, offset: u64) -> Level {
+        Level {
             level: i as u32,
             layer_count: self.head.layer_count.max(1) * self.head.face_count,
             offset_bytes: offset,
@@ -228,9 +228,9 @@ impl LevelIndex {
     }
 }
 
-/// Describe texture regions e.g. mip-levels and layers.
+/// Metadata describing a particular mipmap level
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub struct RegionDescription {
+pub struct Level {
     pub level: u32,
     pub layer_count: u32,
     pub offset_bytes: u64,

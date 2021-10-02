@@ -1,5 +1,5 @@
 use ktx2_reader::Format;
-use ktx2_reader::{Header, Reader, RegionDescription};
+use ktx2_reader::{Header, Level, Reader};
 use std::path::PathBuf;
 
 fn main() {
@@ -10,16 +10,16 @@ fn main() {
     println!("Header: {:#?}", header);
     assert_head(header);
 
-    let regions_desc = reader.regions_description();
-    println!("Regions: {:#?}", regions_desc);
-    assert_eq!(regions_desc.len(), header.level_count.max(1) as usize);
+    let levels = reader.levels();
+    println!("levels: {:#?}", levels);
+    assert_eq!(levels.len(), header.level_count.max(1) as usize);
 
     let data = reader.read_data().expect("Can't read data");
     println!("Data len: {:?}", data.len());
-    test_data(data, &regions_desc);
+    test_data(data, &levels);
 }
 
-fn test_data(dat: &[u8], info: &[RegionDescription]) {
+fn test_data(dat: &[u8], info: &[Level]) {
     for region in info {
         let offset = region.offset_bytes as usize;
         let bytes = &dat[offset..offset + 4];
