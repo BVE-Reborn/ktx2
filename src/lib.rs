@@ -5,7 +5,7 @@
 mod error;
 mod format;
 
-pub use crate::error::{ParseError, ReadError, ReadToError};
+pub use crate::error::ParseError;
 pub use crate::format::Format;
 
 use byteorder::{ByteOrder, NativeEndian};
@@ -23,12 +23,8 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Create new instance of Reader.  
     /// Asyncroniosly reads and tries to parse data from `input`.
     /// # Errors
-    /// If reading fails, returns [`ReadError::IoError`].  
-    /// If parsing fails, returns [`ReadError::ParseError`].
-    ///
-    /// [`ReadError::IoError`]: error/enum.ReadError.html#variant.IoError
-    /// [`ReadError::ParseError`]: error/enum.ReadError.html#variant.ParseError
-    pub fn new(input: Data) -> ReadResult<Self> {
+    /// If parsing fails, returns [`ParseError`].
+    pub fn new(input: Data) -> ParseResult<Self> {
         let head = Self::read_head(input.as_ref())?;
         let levels_index = Self::read_level_index(input.as_ref(), &head)?;
         Ok(Self {
@@ -39,7 +35,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     }
 
     /// Reads and tries to parse header of texture.  
-    fn read_head(input: &[u8]) -> ReadResult<Header> {
+    fn read_head(input: &[u8]) -> ParseResult<Header> {
         let head_bytes: HeadBytes = input[0..48].try_into().unwrap();
         Self::test_identifier(head_bytes)?;
         Ok(Header::from_bytes(head_bytes)?)
@@ -48,7 +44,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Reads and tries to parse level index of texture.  
     ///
     /// [Level index](https://github.khronos.org/KTX-Specification/#_level_index) is a description of texture data layout.
-    fn read_level_index(input: &[u8], head: &Header) -> ReadResult<Vec<LevelIndex>> {
+    fn read_level_index(input: &[u8], head: &Header) -> ParseResult<Vec<LevelIndex>> {
         const LEVEL_INDEX_START_BYTE: usize = 80;
         const LEVEL_INDEX_BYTE_LEN: usize = 24;
         let level_count = head.level_count.max(1);
@@ -68,7 +64,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         Ok(infos)
     }
 
-    pub fn read_data(&self) -> ReadResult<&[u8]> {
+    pub fn read_data(&self) -> ParseResult<&[u8]> {
         let data_len_bytes = self.data_len_bytes() as usize;
 
         let data_start_byte = self.first_level_offset_bytes() as usize;
@@ -77,16 +73,14 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     }
 
     /// Tests first 12 bytes of input. If identifier is wrong,
-    /// returns [`ReadError::ParseError`](error/enum.ReadError.html#variant.ParseError)
+    /// returns [`ParseError`]
     /// with [`ParseError::BadIdentifier`](error/enum.ParseError.html#variant.BadIdentifier).
-    fn test_identifier(head_bytes: HeadBytes<'_>) -> ReadResult<()> {
+    fn test_identifier(head_bytes: HeadBytes<'_>) -> ParseResult<()> {
         let ident_bytes: &[u8; 12] = head_bytes[0..12].try_into().unwrap();
         if ident_bytes == &KTX2_IDENTIFIER {
             return Ok(());
         }
-        Err(ReadError::ParseError(ParseError::BadIdentifier(
-            *ident_bytes,
-        )))
+        Err(ParseError::BadIdentifier(*ident_bytes))
     }
 
     /// Returns [`Header`](struct.Header.html) of texture.
@@ -151,12 +145,6 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 static KTX2_IDENTIFIER: [u8; 12] = [
     0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A,
 ];
-
-/// Result of read data operation.
-pub type ReadResult<T> = Result<T, ReadError>;
-
-/// Result of reading data to buffer operation.
-pub type ReadToResult<T> = Result<T, ReadToError>;
 
 /// Result of parsing data operation.
 pub type ParseResult<T> = Result<T, ParseError>;
