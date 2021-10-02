@@ -1,4 +1,4 @@
-use ktx2_reader::format::Format;
+use ktx2_reader::Format;
 use ktx2_reader::{Header, Reader, RegionDescription};
 use std::path::PathBuf;
 

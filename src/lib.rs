@@ -2,12 +2,12 @@
 //! **Currently SUPER COMPRESSION is NOT supported.**
 //!
 //! [`KTX v.2`]: https://github.khronos.org/KTX-Specification/
-pub mod error;
-pub mod format;
+mod error;
+mod format;
 
-use crate::format::Format;
+pub use crate::error::{ParseError, ReadError, ReadToError};
+pub use crate::format::Format;
 
-use crate::error::{ParseError, ReadError, ReadToError};
 use byteorder::{ByteOrder, NativeEndian};
 use std::convert::TryInto;
 
