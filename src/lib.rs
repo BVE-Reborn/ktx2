@@ -79,7 +79,15 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         self.level_index()
             .unwrap()
             .enumerate()
-            .map(move |(i, level)| header.level_info(i as u32, level.offset))
+            .map(move |(i, level)| {
+                header.level_info(
+                    i as u32,
+                    level
+                        .offset
+                        .try_into()
+                        .expect("offsets in memory must fit in usize"),
+                )
+            })
     }
 
     /// Last (by data offset) level in texture data.
@@ -140,7 +148,7 @@ impl Header {
         Ok(())
     }
 
-    fn level_info(&self, i: u32, offset: u64) -> Level {
+    fn level_info(&self, i: u32, offset: usize) -> Level {
         /// Size in pixels of `level`, with `base` size.
         fn level_size(base: u32, level: u32) -> u32 {
             (base >> level).max(1)
@@ -178,7 +186,7 @@ impl LevelIndex {
 pub struct Level {
     pub layer_count: u32,
     /// Offset in [`Reader::data`]
-    pub offset_bytes: u64,
+    pub offset_bytes: usize,
     pub width: u32,
     pub height: u32,
     pub depth: u32,
