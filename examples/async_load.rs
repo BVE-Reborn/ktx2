@@ -30,7 +30,7 @@ fn test_data(dat: &[u8], info: &[RegionDescription]) {
 }
 
 fn assert_head(header: Header) {
-    assert_eq!(header.format, Format::VK_FORMAT_R8G8B8A8_UINT);
+    assert_eq!(header.format, Format::R8G8B8A8_UINT);
     assert_eq!(header.type_size, 1);
     assert_eq!(header.pixel_width, 1024);
     assert_eq!(header.pixel_height, 512);
