@@ -17,7 +17,6 @@ fn main() {
     let data = reader.read_data().expect("Can't read data");
     println!("Data len: {:?}", data.len());
     test_data(data, &regions_desc);
-    return;
 }
 
 fn test_data(dat: &[u8], info: &[RegionDescription]) {
@@ -42,6 +41,6 @@ fn assert_head(header: Header) {
 
 fn get_texture_path() -> PathBuf {
     let mut current_dir = std::env::current_dir().expect("Can't get current directory");
-    current_dir.push("data\\test_tex.ktx2");
+    current_dir.push("data/test_tex.ktx2");
     current_dir
 }
