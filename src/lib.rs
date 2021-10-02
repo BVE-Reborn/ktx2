@@ -135,9 +135,9 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             level: i as u32,
             layer_count: self.head.layer_count.max(1) * self.head.face_count,
             offset_bytes: offset,
-            width: Self::level_size(self.head.base_width, i as u32),
-            height: Self::level_size(self.head.base_height, i as u32),
-            depth: Self::level_size(self.head.base_depth, i as u32),
+            width: Self::level_size(self.head.pixel_width, i as u32),
+            height: Self::level_size(self.head.pixel_height, i as u32),
+            depth: Self::level_size(self.head.pixel_depth, i as u32),
         }
     }
 
@@ -166,9 +166,9 @@ pub type ParseResult<T> = Result<T, ParseError>;
 pub struct Header {
     pub format: Format,
     pub type_size: u32,
-    pub base_width: u32,
-    pub base_height: u32,
-    pub base_depth: u32,
+    pub pixel_width: u32,
+    pub pixel_height: u32,
+    pub pixel_depth: u32,
     pub layer_count: u32,
     pub face_count: u32,
     pub level_count: u32,
@@ -184,9 +184,9 @@ impl Header {
         Ok(Self {
             format,
             type_size: NativeEndian::read_u32(&data[16..20]),
-            base_width: Self::parse_base_width(&data[20..24])?,
-            base_height: NativeEndian::read_u32(&data[24..28]),
-            base_depth: NativeEndian::read_u32(&data[28..32]),
+            pixel_width: Self::parse_pixel_width(&data[20..24])?,
+            pixel_height: NativeEndian::read_u32(&data[24..28]),
+            pixel_depth: NativeEndian::read_u32(&data[28..32]),
             layer_count: NativeEndian::read_u32(&data[32..36]),
             face_count: Self::parse_face_count(&data[36..40])?,
             level_count: NativeEndian::read_u32(&data[40..44]),
@@ -194,7 +194,7 @@ impl Header {
         })
     }
 
-    fn parse_base_width(data: &[u8]) -> ParseResult<u32> {
+    fn parse_pixel_width(data: &[u8]) -> ParseResult<u32> {
         let result = NativeEndian::read_u32(&data[0..4]);
         match result {
             0 => Err(ParseError::ZeroWidth),

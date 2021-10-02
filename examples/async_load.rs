@@ -32,9 +32,9 @@ fn test_data(dat: &[u8], info: &[RegionDescription]) {
 fn assert_head(header: Header) {
     assert_eq!(header.format, Format::VK_FORMAT_R8G8B8A8_UINT);
     assert_eq!(header.type_size, 1);
-    assert_eq!(header.base_width, 1024);
-    assert_eq!(header.base_height, 512);
-    assert_eq!(header.base_depth, 0);
+    assert_eq!(header.pixel_width, 1024);
+    assert_eq!(header.pixel_height, 512);
+    assert_eq!(header.pixel_depth, 0);
     assert_eq!(header.layer_count, 0);
     assert_eq!(header.face_count, 1);
     assert_eq!(header.level_count, 11);
