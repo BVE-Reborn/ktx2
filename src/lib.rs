@@ -28,7 +28,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Asyncroniosly reads and tries to parse data from `input`.
     /// # Errors
     /// If parsing fails, returns [`ParseError`].
-    pub fn new(input: Data) -> ParseResult<Self> {
+    pub fn new(input: Data) -> Result<Self, ParseError> {
         let head = Self::read_head(input.as_ref())?;
         let result = Self { input, head };
         result.level_index()?; // Check index integrity
@@ -153,7 +153,7 @@ const KTX2_IDENTIFIER: [u8; 12] = [
 ];
 
 /// Result of parsing data operation.
-pub type ParseResult<T> = Result<T, ParseError>;
+type ParseResult<T> = Result<T, ParseError>;
 
 /// Header of texture. Contains general information.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
