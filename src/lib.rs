@@ -135,7 +135,7 @@ pub type ParseResult<T> = Result<T, ParseError>;
 /// Header of texture. Contains general information.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Header {
-    pub format: Format,
+    pub format: Option<Format>,
     pub type_size: u32,
     pub pixel_width: u32,
     pub pixel_height: u32,
@@ -149,11 +149,8 @@ pub struct Header {
 impl Header {
     /// Crates Header from bytes array.
     pub fn from_bytes(data: HeadBytes) -> ParseResult<Self> {
-        let format_id = u32::from_le_bytes(data[12..16].try_into().unwrap());
-        let format = format_id.try_into()?;
-
         Ok(Self {
-            format,
+            format: Format::new(u32::from_le_bytes(data[12..16].try_into().unwrap())),
             type_size: u32::from_le_bytes(data[16..20].try_into().unwrap()),
             pixel_width: Self::parse_pixel_width(&data[20..24])?,
             pixel_height: u32::from_le_bytes(data[24..28].try_into().unwrap()),
