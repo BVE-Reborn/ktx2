@@ -1,6 +1,25 @@
-//! [KTX2] decoding. Start with a [`Reader`].
+//! Parser for the [ktx2](https://github.khronos.org/KTX-Specification/) texture container format.
 //!
-//! [KTX2]: https://github.khronos.org/KTX-Specification/
+//! ## Features
+//! - [x] Async reading
+//! - [x] Parsing
+//! - [x] Validating
+//! - [ ] [Data format description](https://github.khronos.org/KTX-Specification/#_data_format_descriptor)
+//! - [ ] [Key/value data](https://github.khronos.org/KTX-Specification/#_keyvalue_data)
+//
+//! ## Example
+//! ```rust
+//! // Crate instance of reader. This validates the header
+//! # let file = include_bytes!("../data/test_tex.ktx2");
+//! let mut reader = ktx2::Reader::new(file).expect("Can't create reader"); // Crate instance of reader.
+//!
+//! // Get general texture information.
+//! let header = reader.header();
+//!
+//! // Read iterator over slices of each mipmap level.
+//! let levels = reader.levels().collect::<Vec<_>>();
+//! # let _ = (header, levels);
+//! ```
 
 #![no_std]
 
@@ -73,10 +92,9 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 
     /// Iterator over the texture's mip levels
     pub fn levels(&self) -> impl ExactSizeIterator<Item = &[u8]> + '_ {
-        self.level_index().unwrap().map(move |level| {
-            &self.input.as_ref()
-                [level.offset as usize..(level.offset + level.length_bytes) as usize]
-        })
+        self.level_index()
+            .unwrap()
+            .map(move |level| &self.input.as_ref()[level.offset as usize..(level.offset + level.length_bytes) as usize])
     }
 
     /// Last (by data offset) level in texture data.
@@ -89,9 +107,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 }
 
 /// Identifier, expected in start of input texture data.
-const KTX2_MAGIC: [u8; 12] = [
-    0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A,
-];
+const KTX2_MAGIC: [u8; 12] = [0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A];
 
 /// Result of parsing data operation.
 type ParseResult<T> = Result<T, ParseError>;
@@ -121,9 +137,7 @@ impl Header {
             layer_count: u32::from_le_bytes(data[32..36].try_into().unwrap()),
             face_count: u32::from_le_bytes(data[36..40].try_into().unwrap()),
             level_count: u32::from_le_bytes(data[40..44].try_into().unwrap()),
-            supercompression_scheme: SupercompressionScheme::new(u32::from_le_bytes(
-                data[44..48].try_into().unwrap(),
-            )),
+            supercompression_scheme: SupercompressionScheme::new(u32::from_le_bytes(data[44..48].try_into().unwrap())),
         }
     }
 
