@@ -1,13 +1,44 @@
+[workspace]
+members = [
+]
+
 [package]
-name = "ktx2-reader"
-version = "0.1.1"
-authors = ["f3kilo <f3kilo@yandex.ru>"]
+name = "ktx2"
+version = "0.2.0"
+authors = ["Benjamin Saunders <ben.e.saunders@gmail.com>", "Connor Fitzgerald <connorwadefitzgerald@gmail.com>", "f3kilo <f3kilo@yandex.ru>"]
 edition = "2018"
-repository = "https://github.com/F3kilo/ktx2-reader"
-description = "Asynchronously read, validate and parse KTX v.2 texture files"
+description = "Parser for the ktx2 texture container format"
 readme = "README.md"
+repository = "https://github.com/BVE-Reborn/ktx2"
 license = "Apache-2.0"
+keywords = []
+categories = []
 
 [features]
 default = ["std"]
 std = []
+
+[package.metadata.release]
+pre-release-hook = ["cargo", "readme", "-o", "README.md", "-t", "README.tpl"]
+[[package.metadata.release.pre-release-replacements]]
+file = "CHANGELOG.md"
+search = "\\[Unreleased\\]\\(#unreleased\\)"
+replace = "[Unreleased](#unreleased)\n- [v{{version}}](#v{{version}})"
+[[package.metadata.release.pre-release-replacements]]
+file = "CHANGELOG.md"
+search = "\\[v([0-9]+)\\.([0-9]+)\\.([0-9]+)\\]\\(#v[0-9\\.]+\\)"
+replace = "[v$1.$2.$3](#v$1$2$3)"
+[[package.metadata.release.pre-release-replacements]]
+file = "CHANGELOG.md"
+search = "## Unreleased"
+replace = "## Unreleased\n\n## v{{version}}\n\nReleased {{date}}"
+[[package.metadata.release.pre-release-replacements]]
+file = "CHANGELOG.md"
+search = "\\[Unreleased\\]\\(https://github.com/BVE-Reborn/ktx2/compare/v([a-z0-9.-]+)\\.\\.\\.HEAD\\)"
+replace = "[Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v{{version}}...HEAD)\n- [v{{version}}](https://github.com/BVE-Reborn/ktx2/compare/v$1...v{{version}})"
+min = 0  # allow first increment
+[[package.metadata.release.pre-release-replacements]]
+file = "CHANGELOG.md"
+search = "<!-- Begin Diffs -->"
+replace = "- [Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v{{version}}...HEAD)"
+min = 0  # allow non-first increment

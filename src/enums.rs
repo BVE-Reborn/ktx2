@@ -1,5 +1,4 @@
-use core::fmt;
-use core::num::NonZeroU32;
+use core::{fmt, num::NonZeroU32};
 
 macro_rules! pseudo_enum {
     ($(#[$attr:meta])* $name:ident { $($case:ident = $value:literal,)* }) => {

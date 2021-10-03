@@ -1,0 +1,20 @@
+[licenses]
+unlicensed = "deny"
+allow-osi-fsf-free = "either"
+allow = [
+]
+
+[bans]
+multiple-versions = "deny"
+skip = [
+]
+
+[advisories]
+vulnerability = "deny"
+unmaintained = "deny"
+ignore = [
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "allow"

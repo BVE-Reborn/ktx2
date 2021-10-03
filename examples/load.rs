@@ -1,11 +1,8 @@
-use ktx2_reader::Format;
-use ktx2_reader::{Header, Reader};
-use std::path::PathBuf;
+use ktx2::{Format, Header, Reader};
 
 fn main() {
-    let tex_path = get_texture_path();
-    let file = std::fs::read(tex_path).expect("Can't open file");
-    let reader = Reader::new(&*file).expect("Can't create reader");
+    let file = include_bytes!("../data/test_tex.ktx2");
+    let reader = Reader::new(file).expect("Can't create reader");
     let header = reader.header();
     println!("Header: {:#?}", header);
     assert_head(header);
@@ -15,10 +12,10 @@ fn main() {
 
     let data = reader.data();
     println!("Data len: {:?}", data.len());
-    test_data(data, &levels);
+    test_data(&levels);
 }
 
-fn test_data(dat: &[u8], info: &[&[u8]]) {
+fn test_data(info: &[&[u8]]) {
     for (i, region) in info.iter().enumerate() {
         println!("Bytes for level {:?}: {:?}", i, &region[..4]);
     }
@@ -34,10 +31,4 @@ fn assert_head(header: Header) {
     assert_eq!(header.face_count, 1);
     assert_eq!(header.level_count, 11);
     assert_eq!(header.supercompression_scheme, None);
-}
-
-fn get_texture_path() -> PathBuf {
-    let mut current_dir = std::env::current_dir().expect("Can't get current directory");
-    current_dir.push("data/test_tex.ktx2");
-    current_dir
 }
