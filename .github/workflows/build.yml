@@ -3,6 +3,7 @@ name: Build
 on:
   push:
     branches: ["trunk", "CI/**"]
+    tags:
   pull_request:
 
 jobs:
@@ -148,7 +149,7 @@ jobs:
           git checkout trunk
 
           cargo login ${{ secrets.CRATES_TOKEN }}
-          cargo release --skip-publish --no-confirm $( echo '${{ github.ref }}' | sed 's?refs/tags/v??' )
+          cargo release -x --no-confirm $( echo '${{ github.ref }}' | sed 's?refs/tags/v??' )
       
       - name: generate release notes
         id: notes
