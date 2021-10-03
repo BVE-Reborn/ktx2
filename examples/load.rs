@@ -11,7 +11,6 @@ fn main() {
     assert_head(header);
 
     let levels = reader.levels().collect::<Vec<_>>();
-    println!("levels: {:#?}", levels);
     assert_eq!(levels.len(), header.level_count.max(1) as usize);
 
     let data = reader.data();
@@ -21,9 +20,7 @@ fn main() {
 
 fn test_data(dat: &[u8], info: &[Level]) {
     for (i, region) in info.iter().enumerate() {
-        let offset = region.offset_bytes;
-        let bytes = &dat[offset..offset + 4];
-        println!("Bytes for level {:?}: {:?}", i, bytes);
+        println!("Bytes for level {:?}: {:?}", i, &region.data[..4]);
     }
 }
 

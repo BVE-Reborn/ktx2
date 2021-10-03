@@ -80,10 +80,8 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             .map(move |(i, level)| {
                 header.level_info(
                     i as u32,
-                    level
-                        .offset
-                        .try_into()
-                        .expect("offsets in memory must fit in usize"),
+                    &self.input.as_ref()
+                        [level.offset as usize..(level.offset + level.length_bytes) as usize],
                 )
             })
     }
@@ -146,7 +144,7 @@ impl Header {
         Ok(())
     }
 
-    fn level_info(&self, i: u32, offset: usize) -> Level {
+    fn level_info<'a>(&self, i: u32, data: &'a [u8]) -> Level<'a> {
         /// Size in pixels of `level`, with `base` size.
         fn level_size(base: u32, level: u32) -> u32 {
             (base >> level).max(1)
@@ -154,10 +152,10 @@ impl Header {
 
         Level {
             layer_count: self.layer_count.max(1) * self.face_count,
-            offset_bytes: offset,
             width: level_size(self.pixel_width, i as u32),
             height: level_size(self.pixel_height, i as u32),
             depth: level_size(self.pixel_depth, i as u32),
+            data,
         }
     }
 }
@@ -181,11 +179,10 @@ impl LevelIndex {
 
 /// Metadata describing a particular mipmap level
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub struct Level {
+pub struct Level<'a> {
     pub layer_count: u32,
-    /// Offset in [`Reader::data`]
-    pub offset_bytes: usize,
     pub width: u32,
     pub height: u32,
     pub depth: u32,
+    pub data: &'a [u8],
 }
