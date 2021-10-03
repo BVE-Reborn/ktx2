@@ -20,6 +20,11 @@ Per Keep a Changelog there are 6 main categories of changes:
 
 ## Unreleased
 
+Initial release under new ownership.
+
+### Changed
+- Cleaned up a signifigant portion of the crate.
+
 ## Diffs
 
 <!-- Begin Diffs -->
