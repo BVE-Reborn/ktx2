@@ -1,5 +1,4 @@
-use ktx2::Format;
-use ktx2::{Header, Reader};
+use ktx2::{Format, Header, Reader};
 
 fn main() {
     let file = include_bytes!("../data/test_tex.ktx2");

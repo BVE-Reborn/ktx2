@@ -29,8 +29,10 @@ extern crate std;
 mod enums;
 mod error;
 
-pub use crate::enums::{Format, SupercompressionScheme};
-pub use crate::error::ParseError;
+pub use crate::{
+    enums::{Format, SupercompressionScheme},
+    error::ParseError,
+};
 
 use core::convert::TryInto;
 
