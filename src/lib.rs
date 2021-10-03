@@ -72,18 +72,11 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     }
 
     /// Iterator over the texture's mip levels
-    pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
-        let header = self.header();
-        self.level_index()
-            .unwrap()
-            .enumerate()
-            .map(move |(i, level)| {
-                header.level_info(
-                    i as u32,
-                    &self.input.as_ref()
-                        [level.offset as usize..(level.offset + level.length_bytes) as usize],
-                )
-            })
+    pub fn levels(&self) -> impl ExactSizeIterator<Item = &[u8]> + '_ {
+        self.level_index().unwrap().map(move |level| {
+            &self.input.as_ref()
+                [level.offset as usize..(level.offset + level.length_bytes) as usize]
+        })
     }
 
     /// Last (by data offset) level in texture data.
@@ -143,21 +136,6 @@ impl Header {
         }
         Ok(())
     }
-
-    fn level_info<'a>(&self, i: u32, data: &'a [u8]) -> Level<'a> {
-        /// Size in pixels of `level`, with `base` size.
-        fn level_size(base: u32, level: u32) -> u32 {
-            (base >> level).max(1)
-        }
-
-        Level {
-            layer_count: self.layer_count.max(1) * self.face_count,
-            width: level_size(self.pixel_width, i as u32),
-            height: level_size(self.pixel_height, i as u32),
-            depth: level_size(self.pixel_depth, i as u32),
-            data,
-        }
-    }
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -175,14 +153,4 @@ impl LevelIndex {
             uncompressed_length_bytes: u64::from_le_bytes(data[16..24].try_into().unwrap()),
         }
     }
-}
-
-/// Metadata describing a particular mipmap level
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub struct Level<'a> {
-    pub layer_count: u32,
-    pub width: u32,
-    pub height: u32,
-    pub depth: u32,
-    pub data: &'a [u8],
 }

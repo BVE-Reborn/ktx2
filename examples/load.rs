@@ -1,5 +1,5 @@
 use ktx2_reader::Format;
-use ktx2_reader::{Header, Level, Reader};
+use ktx2_reader::{Header, Reader};
 use std::path::PathBuf;
 
 fn main() {
@@ -18,9 +18,9 @@ fn main() {
     test_data(data, &levels);
 }
 
-fn test_data(dat: &[u8], info: &[Level]) {
+fn test_data(dat: &[u8], info: &[&[u8]]) {
     for (i, region) in info.iter().enumerate() {
-        println!("Bytes for level {:?}: {:?}", i, &region.data[..4]);
+        println!("Bytes for level {:?}: {:?}", i, &region[..4]);
     }
 }
 
