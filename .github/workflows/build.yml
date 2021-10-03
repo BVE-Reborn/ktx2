@@ -2,6 +2,7 @@ name: Build
 
 on:
   push:
+    branches: ["trunk", "CI/**"]
   pull_request:
 
 jobs:
