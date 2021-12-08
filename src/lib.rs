@@ -57,8 +57,8 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         result.level_index()?; // Check index integrity
 
         // Check level data integrity
-        let last = result.last_level();
-        if last.offset + last.length_bytes > result.input.as_ref().len() as u64 {
+        let trailing = result.level_index().unwrap().max_by_key(|l| l.offset).unwrap();
+        if trailing.offset + trailing.length_bytes > result.input.as_ref().len() as u64 {
             return Err(ParseError::UnexpectedEnd);
         }
 
@@ -97,14 +97,6 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         self.level_index()
             .unwrap()
             .map(move |level| &self.input.as_ref()[level.offset as usize..(level.offset + level.length_bytes) as usize])
-    }
-
-    /// Last (by data offset) level in texture data.
-    fn last_level(&self) -> LevelIndex {
-        self.level_index()
-            .unwrap()
-            .max_by_key(|l| l.offset)
-            .expect("No levels got, but read some on constructing")
     }
 }
 
