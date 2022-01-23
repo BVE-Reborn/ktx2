@@ -565,14 +565,12 @@ impl From<u32> for TransferFunction {
     }
 }
 
-#[inline]
 fn bytes_to_u32(bytes: &[u8], offset: &mut usize) -> u32 {
     let v = u32::from_le_bytes(bytes[*offset..*offset + 4].try_into().unwrap());
     *offset += 4;
     v
 }
 
-#[inline]
 fn shift_and_mask_lower(shift: u32, mask: u32, value: u32) -> u32 {
     (value >> shift) & ((1 << mask) - 1)
 }
