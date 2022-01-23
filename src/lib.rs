@@ -388,41 +388,43 @@ impl SampleInformation {
 
 #[derive(Debug)]
 pub enum ColorModel {
-    Unspecified = 0,
-    RGBSDA = 1,
-    YUVSDA = 2,
-    YIQSDA = 3,
-    LabSDA = 4,
-    CMYKA = 5,
-    XYZW = 6,
-    HSVAAng = 7,
-    HSLAAng = 8,
-    HSVAHex = 9,
-    HSLAHex = 10,
-    YCgCoA = 11,
-    YcCbcCrc = 12,
-    ICtCp = 13,
-    CIEXYZ = 14,
-    CIEXYY = 15,
-    BC1A = 128,
-    BC2 = 129,
-    BC3 = 130,
-    BC4 = 131,
-    BC5 = 132,
-    BC6H = 133,
-    BC7 = 134,
-    ETC1 = 160,
-    ETC2 = 161,
-    ASTC = 162,
-    ETC1S = 163,
-    PVRTC = 164,
-    PVRTC2 = 165,
-    UASTC = 166,
+    Unspecified, // 0
+    RGBSDA,      // 1
+    YUVSDA,      // 2
+    YIQSDA,      // 3
+    LabSDA,      // 4
+    CMYKA,       // 5
+    XYZW,        // 6
+    HSVAAng,     // 7
+    HSLAAng,     // 8
+    HSVAHex,     // 9
+    HSLAHex,     // 10
+    YCgCoA,      // 11
+    YcCbcCrc,    // 12
+    ICtCp,       // 13
+    CIEXYZ,      // 14
+    CIEXYY,      // 15
+    BC1A,        // 128
+    BC2,         // 129
+    BC3,         // 130
+    BC4,         // 131
+    BC5,         // 132
+    BC6H,        // 133
+    BC7,         // 134
+    ETC1,        // 160
+    ETC2,        // 161
+    ASTC,        // 162
+    ETC1S,       // 163
+    PVRTC,       // 164
+    PVRTC2,      // 165
+    UASTC,       // 166
+    Unknown(u32),
 }
 
 impl From<u32> for ColorModel {
     fn from(color_model: u32) -> Self {
         match color_model {
+            0 => Self::Unspecified,
             1 => Self::RGBSDA,
             2 => Self::YUVSDA,
             3 => Self::YIQSDA,
@@ -452,7 +454,7 @@ impl From<u32> for ColorModel {
             164 => Self::PVRTC,
             165 => Self::PVRTC2,
             166 => Self::UASTC,
-            _ => Self::Unspecified,
+            v => Self::Unknown(v),
         }
     }
 }
@@ -465,18 +467,19 @@ impl Default for ColorModel {
 
 #[derive(Debug)]
 pub enum ColorPrimaries {
-    Unspecified = 0,
-    BT709 = 1,
-    BT601EBU = 2,
-    BT601SMPTE = 3,
-    BT2020 = 4,
-    CIEXYZ = 5,
-    ACES = 6,
-    ACESCC = 7,
-    NTSC1953 = 8,
-    PAL525 = 9,
-    DISPLAYP3 = 10,
-    AdobeRGB = 11,
+    Unspecified, // 0
+    BT709,       // 1
+    BT601EBU,    // 2
+    BT601SMPTE,  // 3
+    BT2020,      // 4
+    CIEXYZ,      // 5
+    ACES,        // 6
+    ACESCC,      // 7
+    NTSC1953,    // 8
+    PAL525,      // 9
+    DISPLAYP3,   // 10
+    AdobeRGB,    // 11
+    Unknown(u32),
 }
 
 impl Default for ColorPrimaries {
@@ -488,6 +491,7 @@ impl Default for ColorPrimaries {
 impl From<u32> for ColorPrimaries {
     fn from(color_primaries: u32) -> Self {
         match color_primaries {
+            0 => Self::Unspecified,
             1 => Self::BT709,
             2 => Self::BT601EBU,
             3 => Self::BT601SMPTE,
@@ -499,32 +503,33 @@ impl From<u32> for ColorPrimaries {
             9 => Self::PAL525,
             10 => Self::DISPLAYP3,
             11 => Self::AdobeRGB,
-            _ => Self::Unspecified,
+            v => Self::Unknown(v),
         }
     }
 }
 
 #[derive(Debug)]
 pub enum TransferFunction {
-    Unspecified = 0,
-    Linear = 1,
-    SRGB = 2,
-    ITU = 3,
-    NTSC = 4,
-    SLOG = 5,
-    SLOG2 = 6,
-    BT1886 = 7,
-    HLGOETF = 8,
-    HLGEOTF = 9,
-    PQEOTF = 10,
-    PQOETF = 11,
-    DCIP3 = 12,
-    PALOETF = 13,
-    PAL625EOTF = 14,
-    ST240 = 15,
-    ACESCC = 16,
-    ACESCCT = 17,
-    AdobeRGB = 18,
+    Unspecified, // 0
+    Linear,      // 1
+    SRGB,        // 2
+    ITU,         // 3
+    NTSC,        // 4
+    SLOG,        // 5
+    SLOG2,       // 6
+    BT1886,      // 7
+    HLGOETF,     // 8
+    HLGEOTF,     // 9
+    PQEOTF,      // 10
+    PQOETF,      // 11
+    DCIP3,       // 12
+    PALOETF,     // 13
+    PAL625EOTF,  // 14
+    ST240,       // 15
+    ACESCC,      // 16
+    ACESCCT,     // 17
+    AdobeRGB,    // 18
+    Unknown(u32),
 }
 
 impl Default for TransferFunction {
@@ -536,6 +541,7 @@ impl Default for TransferFunction {
 impl From<u32> for TransferFunction {
     fn from(transfer_function: u32) -> Self {
         match transfer_function {
+            0 => Self::Unspecified,
             1 => Self::Linear,
             2 => Self::SRGB,
             3 => Self::ITU,
@@ -554,7 +560,7 @@ impl From<u32> for TransferFunction {
             16 => Self::ACESCC,
             17 => Self::ACESCCT,
             18 => Self::AdobeRGB,
-            _ => Self::Unspecified,
+            v => Self::Unknown(v),
         }
     }
 }
