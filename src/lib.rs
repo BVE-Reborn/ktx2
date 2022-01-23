@@ -107,26 +107,40 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         self.input.as_ref()[start..end].try_into().unwrap()
     }
 
-    pub fn data_format_descriptors(&self) -> Vec<BasicDataFormatDescriptor> {
+    pub fn data_format_descriptors(&self) -> impl Iterator<Item = BasicDataFormatDescriptor> + '_ {
         let header = self.header();
         let start = header.dfd_byte_offset as usize;
         let length: u32 = u32::from_le_bytes(self.input.as_ref()[start..start + 4].try_into().unwrap());
         assert_eq!(length, header.dfd_byte_length);
         assert_eq!(length, header.kvd_byte_offset - header.dfd_byte_offset);
         let end = (header.dfd_byte_offset + header.dfd_byte_length) as usize;
-        let dfd_data: &[u8] = self.input.as_ref()[start..end].try_into().unwrap();
-        let mut descriptors = Vec::new();
-        let mut byte_offset = 4usize;
-        while byte_offset < length as usize {
-            let descriptor = BasicDataFormatDescriptor::from_bytes(&dfd_data[byte_offset..]);
-            // NOTE: Sanity check to not get stuck in an infinite loop
-            if descriptor.descriptor_block_size == 0 {
-                break;
-            }
-            byte_offset += descriptor.descriptor_block_size as usize;
-            descriptors.push(descriptor);
+        DataFormatDescriptorIterator {
+            data: self.input.as_ref()[start..end].try_into().unwrap(),
+            offset: 4,
+            length: length as usize,
         }
-        descriptors
+    }
+}
+
+struct DataFormatDescriptorIterator<'data> {
+    data: &'data [u8],
+    offset: usize,
+    length: usize,
+}
+
+impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
+    type Item = BasicDataFormatDescriptor<'data>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset >= self.length {
+            return None;
+        }
+        let descriptor = BasicDataFormatDescriptor::from_bytes(&self.data[self.offset..]);
+        if descriptor.descriptor_block_size == 0 {
+            return None;
+        }
+        self.offset += descriptor.descriptor_block_size as usize;
+        Some(descriptor)
     }
 }
 
