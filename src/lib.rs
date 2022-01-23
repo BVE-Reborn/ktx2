@@ -216,8 +216,6 @@ bitflags::bitflags! {
         const EXPONENT      = (1 << 1);
         const SIGNED        = (1 << 2);
         const FLOAT         = (1 << 3);
-        const NONE          = 0;
-        const UNINITIALIZED = 0xFFFF;
     }
 }
 
@@ -225,9 +223,8 @@ bitflags::bitflags! {
     #[derive(Default)]
     #[repr(transparent)]
     pub struct DataFormatFlags: u32 {
+        const STRAIGHT_ALPHA             = 0;
         const ALPHA_PREMULTIPLIED        = (1 << 0);
-        const NONE          = 0;
-        const UNINITIALIZED = 0xFFFF;
     }
 }
 
