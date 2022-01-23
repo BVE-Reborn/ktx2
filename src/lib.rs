@@ -452,7 +452,7 @@ impl From<u32> for ColorModel {
             164 => Self::PVRTC,
             165 => Self::PVRTC2,
             166 => Self::UASTC,
-            0 | _ => Self::Unspecified,
+            _ => Self::Unspecified,
         }
     }
 }
@@ -499,7 +499,7 @@ impl From<u32> for ColorPrimaries {
             9 => Self::PAL525,
             10 => Self::DISPLAYP3,
             11 => Self::AdobeRGB,
-            0 | _ => Self::Unspecified,
+            _ => Self::Unspecified,
         }
     }
 }
@@ -554,7 +554,7 @@ impl From<u32> for TransferFunction {
             16 => Self::ACESCC,
             17 => Self::ACESCCT,
             18 => Self::AdobeRGB,
-            0 | _ => Self::Unspecified,
+            _ => Self::Unspecified,
         }
     }
 }
