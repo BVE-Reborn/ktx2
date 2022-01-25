@@ -23,14 +23,11 @@
 
 #![no_std]
 
-extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
 mod enums;
 mod error;
-
-use alloc::vec::Vec;
 
 pub use crate::{
     enums::{Format, SupercompressionScheme},
@@ -115,9 +112,9 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         assert_eq!(length, header.kvd_byte_offset - header.dfd_byte_offset);
         let end = (header.dfd_byte_offset + header.dfd_byte_length) as usize;
         DataFormatDescriptorIterator {
-            data: self.input.as_ref()[start..end].try_into().unwrap(),
-            offset: 4,
-            length: length as usize,
+            data: self.input.as_ref(),
+            offset: start + 4,
+            end,
         }
     }
 }
@@ -125,17 +122,17 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 struct DataFormatDescriptorIterator<'data> {
     data: &'data [u8],
     offset: usize,
-    length: usize,
+    end: usize,
 }
 
 impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
-    type Item = BasicDataFormatDescriptor<'data>;
+    type Item = BasicDataFormatDescriptor;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.offset >= self.length {
+        if self.offset >= self.end {
             return None;
         }
-        let descriptor = BasicDataFormatDescriptor::from_bytes(&self.data[self.offset..]);
+        let descriptor = BasicDataFormatDescriptor::from_bytes_and_offset(self.data, self.offset);
         if descriptor.descriptor_block_size == 0 {
             return None;
         }
@@ -259,13 +256,13 @@ pub struct BasicDataFormatDescriptor {
     pub flags: DataFormatFlags,              //: 8;
     pub texel_block_dimensions: [u32; 4],    //: 8 x 4;
     pub bytes_planes: [u32; 8],              //: 8 x 8;
-    pub samples: Vec<SampleInformation>,
+    samples_offset: usize,
+    samples_end: usize,
 }
 
 impl BasicDataFormatDescriptor {
-    const HEADER_LENGTH: usize = 24;
-    pub fn from_bytes(bytes: &[u8]) -> Self {
-        let mut offset = 0;
+    pub fn from_bytes_and_offset(bytes: &[u8], initial_offset: usize) -> Self {
+        let mut offset = initial_offset;
 
         let v = bytes_to_u32(bytes, &mut offset);
         let vendor_id = shift_and_mask_lower(0, 17, v);
@@ -277,8 +274,6 @@ impl BasicDataFormatDescriptor {
         let version_number = shift_and_mask_lower(0, 16, v);
         assert_eq!(version_number, 2); // Basic Data Format Descriptor requirement
         let descriptor_block_size = shift_and_mask_lower(16, 16, v);
-
-        let n_samples = (descriptor_block_size - Self::HEADER_LENGTH as u32) / SampleInformation::LENGTH as u32;
 
         let v = bytes_to_u32(bytes, &mut offset);
         let model = shift_and_mask_lower(0, 8, v);
@@ -307,13 +302,6 @@ impl BasicDataFormatDescriptor {
         bytes_planes[6] = shift_and_mask_lower(16, 8, v);
         bytes_planes[7] = shift_and_mask_lower(24, 8, v);
 
-        let mut samples = Vec::new();
-        while (samples.len() as u32) < n_samples {
-            samples.push(SampleInformation::from_bytes(&bytes[offset..offset + 16]));
-            offset += 16;
-        }
-        assert_eq!(offset as u32, descriptor_block_size);
-
         Self {
             vendor_id,
             descriptor_type,
@@ -325,8 +313,35 @@ impl BasicDataFormatDescriptor {
             flags: DataFormatFlags::from_bits_truncate(flags),
             texel_block_dimensions,
             bytes_planes,
-            samples,
+            samples_offset: offset,
+            samples_end: initial_offset + descriptor_block_size as usize,
         }
+    }
+
+    pub fn sample_informations<'data>(&self, data: &'data [u8]) -> impl Iterator<Item = SampleInformation> + 'data {
+        SampleInformationIterator {
+            data: &data[self.samples_offset..self.samples_end],
+            offset: 0,
+        }
+    }
+}
+
+struct SampleInformationIterator<'data> {
+    data: &'data [u8],
+    offset: usize,
+}
+
+impl<'data> Iterator for SampleInformationIterator<'data> {
+    type Item = SampleInformation;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.offset > self.data.len() - SampleInformation::LENGTH {
+            return None;
+        }
+        let sample_information =
+            SampleInformation::from_bytes(&self.data[self.offset..self.offset + SampleInformation::LENGTH]);
+        self.offset += SampleInformation::LENGTH;
+        Some(sample_information)
     }
 }
 
@@ -351,7 +366,7 @@ impl SampleInformation {
         let bit_offset = shift_and_mask_lower(0, 16, v);
         let bit_length = shift_and_mask_lower(16, 8, v) + 1;
         let channel_type = shift_and_mask_lower(24, 4, v);
-        let channel_type_qualifiers = ChannelTypeQualifiers::from_bits_truncate(shift_and_mask_lower(24, 4, v));
+        let channel_type_qualifiers = ChannelTypeQualifiers::from_bits_truncate(shift_and_mask_lower(28, 4, v));
 
         let v = bytes_to_u32(bytes, &mut offset);
         let sample_positions = [
@@ -363,7 +378,7 @@ impl SampleInformation {
         let lower = bytes_to_u32(bytes, &mut offset);
         let upper = bytes_to_u32(bytes, &mut offset);
 
-        assert_eq!(offset, 16);
+        assert_eq!(offset, Self::LENGTH);
 
         Self {
             bit_offset,
