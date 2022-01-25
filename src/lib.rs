@@ -104,7 +104,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         self.input.as_ref()[start..end].try_into().unwrap()
     }
 
-    pub fn data_format_descriptors(&self) -> impl Iterator<Item = BasicDataFormatDescriptor> + '_ {
+    pub fn data_format_descriptors(&self) -> impl Iterator<Item = BasicDataFormatDescriptor> {
         let header = self.header();
         let start = header.dfd_byte_offset as usize;
         let length: u32 = u32::from_le_bytes(self.input.as_ref()[start..start + 4].try_into().unwrap());
@@ -126,7 +126,7 @@ struct DataFormatDescriptorIterator<'data> {
 }
 
 impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
-    type Item = BasicDataFormatDescriptor;
+    type Item = BasicDataFormatDescriptor<'data>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.offset >= self.end {
@@ -245,7 +245,7 @@ bitflags::bitflags! {
 const F32_1_AS_U32: u32 = 1065353216;
 
 #[derive(Debug, Default)]
-pub struct BasicDataFormatDescriptor {
+pub struct BasicDataFormatDescriptor<'data> {
     pub vendor_id: u32,             //: 17;
     pub descriptor_type: u32,       //: 15;
     pub version_number: u32,        //: 16;
@@ -259,12 +259,11 @@ pub struct BasicDataFormatDescriptor {
     pub flags: DataFormatFlags,     //: 8;
     pub texel_block_dimensions: [u32; 4], //: 8 x 4;
     pub bytes_planes: [u32; 8],     //: 8 x 8;
-    samples_offset: usize,
-    samples_end: usize,
+    sample_data: &'data [u8],
 }
 
-impl BasicDataFormatDescriptor {
-    pub fn from_bytes_and_offset(bytes: &[u8], initial_offset: usize) -> Self {
+impl<'data> BasicDataFormatDescriptor<'data> {
+    pub fn from_bytes_and_offset(bytes: &'data [u8], initial_offset: usize) -> Self {
         let mut offset = initial_offset;
 
         let v = bytes_to_u32(bytes, &mut offset);
@@ -316,14 +315,13 @@ impl BasicDataFormatDescriptor {
             flags: DataFormatFlags::from_bits_truncate(flags),
             texel_block_dimensions,
             bytes_planes,
-            samples_offset: offset,
-            samples_end: initial_offset + descriptor_block_size as usize,
+            sample_data: &bytes[offset..initial_offset + descriptor_block_size as usize],
         }
     }
 
-    pub fn sample_informations<'data>(&self, data: &'data [u8]) -> impl Iterator<Item = SampleInformation> + 'data {
+    pub fn sample_information(&self) -> impl Iterator<Item = SampleInformation> + 'data {
         SampleInformationIterator {
-            data: &data[self.samples_offset..self.samples_end],
+            data: self.sample_data,
             offset: 0,
         }
     }
