@@ -198,3 +198,76 @@ pseudo_enum! {
         ZLIB = 3,
     }
 }
+
+pseudo_enum! {
+    ColorModel {
+        RGBSDA = 1,
+        YUVSDA = 2,
+        YIQSDA = 3,
+        LabSDA = 4,
+        CMYKA = 5,
+        XYZW = 6,
+        HSVAAng = 7,
+        HSLAAng = 8,
+        HSVAHex = 9,
+        HSLAHex = 10,
+        YCgCoA = 11,
+        YcCbcCrc = 12,
+        ICtCp = 13,
+        CIEXYZ = 14,
+        CIEXYY = 15,
+        BC1A = 128,
+        BC2 = 129,
+        BC3 = 130,
+        BC4 = 131,
+        BC5 = 132,
+        BC6H = 133,
+        BC7 = 134,
+        ETC1 = 160,
+        ETC2 = 161,
+        ASTC = 162,
+        ETC1S = 163,
+        PVRTC = 164,
+        PVRTC2 = 165,
+        UASTC = 166,
+    }
+}
+
+pseudo_enum! {
+    ColorPrimaries {
+        BT709 = 1,
+        BT601EBU = 2,
+        BT601SMPTE = 3,
+        BT2020 = 4,
+        CIEXYZ = 5,
+        ACES = 6,
+        ACESCC = 7,
+        NTSC1953 = 8,
+        PAL525 = 9,
+        DISPLAYP3 = 10,
+        AdobeRGB = 11,
+    }
+}
+
+pseudo_enum! {
+    TransferFunction {
+        Linear = 1,
+        SRGB = 2,
+        ITU = 3,
+        NTSC = 4,
+        SLOG = 5,
+        SLOG2 = 6,
+        BT1886 = 7,
+        HLGOETF = 8,
+        HLGEOTF = 9,
+        PQEOTF = 10,
+        PQOETF = 11,
+        DCIP3 = 12,
+        PALOETF = 13,
+        PAL625EOTF = 14,
+        ST240 = 15,
+        ACESCC = 16,
+        ACESCCT = 17,
+        AdobeRGB = 18,
+    }
+}

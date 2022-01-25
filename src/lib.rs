@@ -30,7 +30,7 @@ mod enums;
 mod error;
 
 pub use crate::{
-    enums::{Format, SupercompressionScheme},
+    enums::{ColorModel, ColorPrimaries, Format, SupercompressionScheme, TransferFunction},
     error::ParseError,
 };
 
@@ -246,16 +246,19 @@ const F32_1_AS_U32: u32 = 1065353216;
 
 #[derive(Debug, Default)]
 pub struct BasicDataFormatDescriptor {
-    pub vendor_id: u32,                      //: 17;
-    pub descriptor_type: u32,                //: 15;
-    pub version_number: u32,                 //: 16;
-    pub descriptor_block_size: u32,          //: 16;
-    pub color_model: ColorModel,             //: 8;
-    pub color_primaries: ColorPrimaries,     //: 8;
-    pub transfer_function: TransferFunction, //: 8;
-    pub flags: DataFormatFlags,              //: 8;
-    pub texel_block_dimensions: [u32; 4],    //: 8 x 4;
-    pub bytes_planes: [u32; 8],              //: 8 x 8;
+    pub vendor_id: u32,                              //: 17;
+    pub descriptor_type: u32,                        //: 15;
+    pub version_number: u32,                         //: 16;
+    pub descriptor_block_size: u32,                  //: 16;
+    /// None means Unspecified or is an otherwise unknown value
+    pub color_model: Option<ColorModel>,             //: 8;
+    /// None means Unspecified or is an otherwise unknown value
+    pub color_primaries: Option<ColorPrimaries>,     //: 8;
+    /// None means Unspecified or is an otherwise unknown value
+    pub transfer_function: Option<TransferFunction>, //: 8;
+    pub flags: DataFormatFlags,                      //: 8;
+    pub texel_block_dimensions: [u32; 4],            //: 8 x 4;
+    pub bytes_planes: [u32; 8],                      //: 8 x 8;
     samples_offset: usize,
     samples_end: usize,
 }
@@ -307,9 +310,9 @@ impl BasicDataFormatDescriptor {
             descriptor_type,
             version_number,
             descriptor_block_size,
-            color_model: ColorModel::from(model),
-            color_primaries: ColorPrimaries::from(primaries),
-            transfer_function: TransferFunction::from(transfer),
+            color_model: ColorModel::new(model),
+            color_primaries: ColorPrimaries::new(primaries),
+            transfer_function: TransferFunction::new(transfer),
             flags: DataFormatFlags::from_bits_truncate(flags),
             texel_block_dimensions,
             bytes_planes,
@@ -409,185 +412,6 @@ impl SampleInformation {
 
     pub fn is_norm(&self) -> bool {
         self.is_float() && self.upper == F32_1_AS_U32
-    }
-}
-
-#[derive(Debug)]
-pub enum ColorModel {
-    Unspecified, // 0
-    RGBSDA,      // 1
-    YUVSDA,      // 2
-    YIQSDA,      // 3
-    LabSDA,      // 4
-    CMYKA,       // 5
-    XYZW,        // 6
-    HSVAAng,     // 7
-    HSLAAng,     // 8
-    HSVAHex,     // 9
-    HSLAHex,     // 10
-    YCgCoA,      // 11
-    YcCbcCrc,    // 12
-    ICtCp,       // 13
-    CIEXYZ,      // 14
-    CIEXYY,      // 15
-    BC1A,        // 128
-    BC2,         // 129
-    BC3,         // 130
-    BC4,         // 131
-    BC5,         // 132
-    BC6H,        // 133
-    BC7,         // 134
-    ETC1,        // 160
-    ETC2,        // 161
-    ASTC,        // 162
-    ETC1S,       // 163
-    PVRTC,       // 164
-    PVRTC2,      // 165
-    UASTC,       // 166
-    Unknown(u32),
-}
-
-impl From<u32> for ColorModel {
-    fn from(color_model: u32) -> Self {
-        match color_model {
-            0 => Self::Unspecified,
-            1 => Self::RGBSDA,
-            2 => Self::YUVSDA,
-            3 => Self::YIQSDA,
-            4 => Self::LabSDA,
-            5 => Self::CMYKA,
-            6 => Self::XYZW,
-            7 => Self::HSVAAng,
-            8 => Self::HSLAAng,
-            9 => Self::HSVAHex,
-            10 => Self::HSLAHex,
-            11 => Self::YCgCoA,
-            12 => Self::YcCbcCrc,
-            13 => Self::ICtCp,
-            14 => Self::CIEXYZ,
-            15 => Self::CIEXYY,
-            128 => Self::BC1A,
-            129 => Self::BC2,
-            130 => Self::BC3,
-            131 => Self::BC4,
-            132 => Self::BC5,
-            133 => Self::BC6H,
-            134 => Self::BC7,
-            160 => Self::ETC1,
-            161 => Self::ETC2,
-            162 => Self::ASTC,
-            163 => Self::ETC1S,
-            164 => Self::PVRTC,
-            165 => Self::PVRTC2,
-            166 => Self::UASTC,
-            v => Self::Unknown(v),
-        }
-    }
-}
-
-impl Default for ColorModel {
-    fn default() -> Self {
-        Self::Unspecified
-    }
-}
-
-#[derive(Debug)]
-pub enum ColorPrimaries {
-    Unspecified, // 0
-    BT709,       // 1
-    BT601EBU,    // 2
-    BT601SMPTE,  // 3
-    BT2020,      // 4
-    CIEXYZ,      // 5
-    ACES,        // 6
-    ACESCC,      // 7
-    NTSC1953,    // 8
-    PAL525,      // 9
-    DISPLAYP3,   // 10
-    AdobeRGB,    // 11
-    Unknown(u32),
-}
-
-impl Default for ColorPrimaries {
-    fn default() -> Self {
-        Self::Unspecified
-    }
-}
-
-impl From<u32> for ColorPrimaries {
-    fn from(color_primaries: u32) -> Self {
-        match color_primaries {
-            0 => Self::Unspecified,
-            1 => Self::BT709,
-            2 => Self::BT601EBU,
-            3 => Self::BT601SMPTE,
-            4 => Self::BT2020,
-            5 => Self::CIEXYZ,
-            6 => Self::ACES,
-            7 => Self::ACESCC,
-            8 => Self::NTSC1953,
-            9 => Self::PAL525,
-            10 => Self::DISPLAYP3,
-            11 => Self::AdobeRGB,
-            v => Self::Unknown(v),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum TransferFunction {
-    Unspecified, // 0
-    Linear,      // 1
-    SRGB,        // 2
-    ITU,         // 3
-    NTSC,        // 4
-    SLOG,        // 5
-    SLOG2,       // 6
-    BT1886,      // 7
-    HLGOETF,     // 8
-    HLGEOTF,     // 9
-    PQEOTF,      // 10
-    PQOETF,      // 11
-    DCIP3,       // 12
-    PALOETF,     // 13
-    PAL625EOTF,  // 14
-    ST240,       // 15
-    ACESCC,      // 16
-    ACESCCT,     // 17
-    AdobeRGB,    // 18
-    Unknown(u32),
-}
-
-impl Default for TransferFunction {
-    fn default() -> Self {
-        Self::Unspecified
-    }
-}
-
-impl From<u32> for TransferFunction {
-    fn from(transfer_function: u32) -> Self {
-        match transfer_function {
-            0 => Self::Unspecified,
-            1 => Self::Linear,
-            2 => Self::SRGB,
-            3 => Self::ITU,
-            4 => Self::NTSC,
-            5 => Self::SLOG,
-            6 => Self::SLOG2,
-            7 => Self::BT1886,
-            8 => Self::HLGOETF,
-            9 => Self::HLGEOTF,
-            10 => Self::PQEOTF,
-            11 => Self::PQOETF,
-            12 => Self::DCIP3,
-            13 => Self::PALOETF,
-            14 => Self::PAL625EOTF,
-            15 => Self::ST240,
-            16 => Self::ACESCC,
-            17 => Self::ACESCCT,
-            18 => Self::AdobeRGB,
-            v => Self::Unknown(v),
-        }
     }
 }
 
