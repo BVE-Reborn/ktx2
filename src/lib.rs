@@ -246,19 +246,19 @@ const F32_1_AS_U32: u32 = 1065353216;
 
 #[derive(Debug, Default)]
 pub struct BasicDataFormatDescriptor {
-    pub vendor_id: u32,                              //: 17;
-    pub descriptor_type: u32,                        //: 15;
-    pub version_number: u32,                         //: 16;
-    pub descriptor_block_size: u32,                  //: 16;
+    pub vendor_id: u32,             //: 17;
+    pub descriptor_type: u32,       //: 15;
+    pub version_number: u32,        //: 16;
+    pub descriptor_block_size: u32, //: 16;
     /// None means Unspecified or is an otherwise unknown value
-    pub color_model: Option<ColorModel>,             //: 8;
+    pub color_model: Option<ColorModel>, //: 8;
     /// None means Unspecified or is an otherwise unknown value
-    pub color_primaries: Option<ColorPrimaries>,     //: 8;
+    pub color_primaries: Option<ColorPrimaries>, //: 8;
     /// None means Unspecified or is an otherwise unknown value
     pub transfer_function: Option<TransferFunction>, //: 8;
-    pub flags: DataFormatFlags,                      //: 8;
-    pub texel_block_dimensions: [u32; 4],            //: 8 x 4;
-    pub bytes_planes: [u32; 8],                      //: 8 x 8;
+    pub flags: DataFormatFlags,     //: 8;
+    pub texel_block_dimensions: [u32; 4], //: 8 x 4;
+    pub bytes_planes: [u32; 8],     //: 8 x 8;
     samples_offset: usize,
     samples_end: usize,
 }
