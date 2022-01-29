@@ -101,7 +101,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         let header = self.header();
         let start = header.sgd_byte_offset as usize;
         let end = (header.sgd_byte_offset + header.sgd_byte_length) as usize;
-        self.input.as_ref()[start..end].try_into().unwrap()
+        &self.input.as_ref()[start..end]
     }
 
     pub fn data_format_descriptors(&self) -> impl Iterator<Item = BasicDataFormatDescriptor> {
@@ -263,7 +263,7 @@ pub struct BasicDataFormatDescriptor<'data> {
 }
 
 impl<'data> BasicDataFormatDescriptor<'data> {
-    pub fn from_bytes_and_offset(bytes: &'data [u8], initial_offset: usize) -> Self {
+    fn from_bytes_and_offset(bytes: &'data [u8], initial_offset: usize) -> Self {
         let mut offset = initial_offset;
 
         let v = bytes_to_u32(bytes, &mut offset);
@@ -360,7 +360,7 @@ pub struct SampleInformation {
 impl SampleInformation {
     const LENGTH: usize = 16;
 
-    pub fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8]) -> Self {
         let mut offset = 0;
 
         let v = bytes_to_u32(bytes, &mut offset);
