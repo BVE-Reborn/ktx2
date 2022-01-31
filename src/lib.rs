@@ -55,6 +55,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 
         let result = Self { input };
         result.level_index()?; // Check index integrity
+        result.data_format_descriptors()?; // Check data format descriptor integrity
 
         // Check level data integrity
         let trailing = result.level_index().unwrap().max_by_key(|l| l.offset).unwrap();
@@ -104,18 +105,26 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         &self.input.as_ref()[start..end]
     }
 
-    pub fn data_format_descriptors(&self) -> impl Iterator<Item = BasicDataFormatDescriptor> {
+    pub fn data_format_descriptors(&self) -> ParseResult<impl Iterator<Item = DataFormatDescriptor>> {
         let header = self.header();
         let start = header.dfd_byte_offset as usize;
-        let length: u32 = u32::from_le_bytes(self.input.as_ref()[start..start + 4].try_into().unwrap());
-        assert_eq!(length, header.dfd_byte_length);
-        assert_eq!(length, header.kvd_byte_offset - header.dfd_byte_offset);
+        let length: u32 = u32::from_le_bytes(
+            self.input
+                .as_ref()
+                .get(start..start + 4)
+                .ok_or(ParseError::UnexpectedEnd)?
+                .try_into()
+                .unwrap(),
+        );
+        if length != header.dfd_byte_length || length != header.kvd_byte_offset - header.dfd_byte_offset {
+            return Err(ParseError::UnexpectedEnd);
+        }
         let end = (header.dfd_byte_offset + header.dfd_byte_length) as usize;
-        DataFormatDescriptorIterator {
+        Ok(DataFormatDescriptorIterator {
             data: self.input.as_ref(),
             offset: start + 4,
             end,
-        }
+        })
     }
 }
 
@@ -126,18 +135,26 @@ struct DataFormatDescriptorIterator<'data> {
 }
 
 impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
-    type Item = BasicDataFormatDescriptor<'data>;
+    type Item = DataFormatDescriptor<'data>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.offset >= self.end {
+        if self.offset > self.end - DataFormatDescriptorHeader::LENGTH {
             return None;
         }
-        let descriptor = BasicDataFormatDescriptor::from_bytes_and_offset(self.data, self.offset);
-        if descriptor.descriptor_block_size == 0 {
-            return None;
-        }
-        self.offset += descriptor.descriptor_block_size as usize;
-        Some(descriptor)
+        let block_start = self.offset + DataFormatDescriptorHeader::LENGTH;
+        DataFormatDescriptorHeader::parse(&self.data[self.offset..block_start]).map_or(
+            None,
+            |(header, descriptor_block_size)| {
+                if descriptor_block_size == 0 || self.offset > self.end - descriptor_block_size {
+                    return None;
+                }
+                self.offset += descriptor_block_size;
+                Some(DataFormatDescriptor {
+                    header,
+                    data: &self.data[block_start..self.offset],
+                })
+            },
+        )
     }
 }
 
@@ -239,51 +256,73 @@ bitflags::bitflags! {
     }
 }
 
-// This can be obtained from std::mem::transmute::<f32, u32>(1.0f32) but we
-// want to support nostd. It is used for identifying normalized sample types
-// as in Unorm or Snorm
-const F32_1_AS_U32: u32 = 1065353216;
+#[derive(PartialEq, Eq)]
+pub struct DataFormatDescriptorHeader {
+    pub vendor_id: u32,       //: 17;
+    pub descriptor_type: u32, //: 15;
+    pub version_number: u32,  //: 16;
+}
 
-#[derive(Debug, Default)]
+impl DataFormatDescriptorHeader {
+    const LENGTH: usize = 8;
+
+    pub const BASIC: Self = Self {
+        vendor_id: 0,
+        descriptor_type: 0,
+        version_number: 2,
+    };
+
+    fn parse(bytes: &[u8]) -> Result<(Self, usize), ParseError> {
+        let mut offset = 0;
+
+        let v = bytes_to_u32(bytes, &mut offset)?;
+        let vendor_id = shift_and_mask_lower(0, 17, v);
+        let descriptor_type = shift_and_mask_lower(17, 15, v);
+
+        let v = bytes_to_u32(bytes, &mut offset)?;
+        let version_number = shift_and_mask_lower(0, 16, v);
+        let descriptor_block_size = shift_and_mask_lower(16, 16, v);
+
+        Ok((
+            Self {
+                vendor_id,
+                descriptor_type,
+                version_number,
+            },
+            descriptor_block_size as usize,
+        ))
+    }
+}
+
+pub struct DataFormatDescriptor<'data> {
+    pub header: DataFormatDescriptorHeader,
+    pub data: &'data [u8],
+}
+
 pub struct BasicDataFormatDescriptor<'data> {
-    pub vendor_id: u32,             //: 17;
-    pub descriptor_type: u32,       //: 15;
-    pub version_number: u32,        //: 16;
-    pub descriptor_block_size: u32, //: 16;
     /// None means Unspecified or is an otherwise unknown value
     pub color_model: Option<ColorModel>, //: 8;
     /// None means Unspecified or is an otherwise unknown value
     pub color_primaries: Option<ColorPrimaries>, //: 8;
     /// None means Unspecified or is an otherwise unknown value
     pub transfer_function: Option<TransferFunction>, //: 8;
-    pub flags: DataFormatFlags,     //: 8;
+    pub flags: DataFormatFlags,           //: 8;
     pub texel_block_dimensions: [u32; 4], //: 8 x 4;
-    pub bytes_planes: [u32; 8],     //: 8 x 8;
+    pub bytes_planes: [u32; 8],           //: 8 x 8;
     sample_data: &'data [u8],
 }
 
 impl<'data> BasicDataFormatDescriptor<'data> {
-    fn from_bytes_and_offset(bytes: &'data [u8], initial_offset: usize) -> Self {
-        let mut offset = initial_offset;
+    pub fn parse(bytes: &'data [u8]) -> Result<Self, ParseError> {
+        let mut offset = 0;
 
-        let v = bytes_to_u32(bytes, &mut offset);
-        let vendor_id = shift_and_mask_lower(0, 17, v);
-        assert_eq!(vendor_id, 0); // Basic Data Format Descriptor requirement
-        let descriptor_type = shift_and_mask_lower(17, 15, v);
-        assert_eq!(descriptor_type, 0); // Basic Data Format Descriptor requirement
-
-        let v = bytes_to_u32(bytes, &mut offset);
-        let version_number = shift_and_mask_lower(0, 16, v);
-        assert_eq!(version_number, 2); // Basic Data Format Descriptor requirement
-        let descriptor_block_size = shift_and_mask_lower(16, 16, v);
-
-        let v = bytes_to_u32(bytes, &mut offset);
+        let v = bytes_to_u32(bytes, &mut offset)?;
         let model = shift_and_mask_lower(0, 8, v);
         let primaries = shift_and_mask_lower(8, 8, v);
         let transfer = shift_and_mask_lower(16, 8, v);
         let flags = shift_and_mask_lower(24, 8, v);
 
-        let v = bytes_to_u32(bytes, &mut offset);
+        let v = bytes_to_u32(bytes, &mut offset)?;
         let texel_block_dimensions = [
             shift_and_mask_lower(0, 8, v) + 1,
             shift_and_mask_lower(8, 8, v) + 1,
@@ -291,32 +330,28 @@ impl<'data> BasicDataFormatDescriptor<'data> {
             shift_and_mask_lower(24, 8, v) + 1,
         ];
 
-        let v = bytes_to_u32(bytes, &mut offset);
+        let v = bytes_to_u32(bytes, &mut offset)?;
         let mut bytes_planes = [0u32; 8];
         bytes_planes[0] = shift_and_mask_lower(0, 8, v);
         bytes_planes[1] = shift_and_mask_lower(8, 8, v);
         bytes_planes[2] = shift_and_mask_lower(16, 8, v);
         bytes_planes[3] = shift_and_mask_lower(24, 8, v);
 
-        let v = bytes_to_u32(bytes, &mut offset);
+        let v = bytes_to_u32(bytes, &mut offset)?;
         bytes_planes[4] = shift_and_mask_lower(0, 8, v);
         bytes_planes[5] = shift_and_mask_lower(8, 8, v);
         bytes_planes[6] = shift_and_mask_lower(16, 8, v);
         bytes_planes[7] = shift_and_mask_lower(24, 8, v);
 
-        Self {
-            vendor_id,
-            descriptor_type,
-            version_number,
-            descriptor_block_size,
+        Ok(Self {
             color_model: ColorModel::new(model),
             color_primaries: ColorPrimaries::new(primaries),
             transfer_function: TransferFunction::new(transfer),
             flags: DataFormatFlags::from_bits_truncate(flags),
             texel_block_dimensions,
             bytes_planes,
-            sample_data: &bytes[offset..initial_offset + descriptor_block_size as usize],
-        }
+            sample_data: &bytes[offset..],
+        })
     }
 
     pub fn sample_information(&self) -> impl Iterator<Item = SampleInformation> + 'data {
@@ -339,10 +374,13 @@ impl<'data> Iterator for SampleInformationIterator<'data> {
         if self.offset > self.data.len() - SampleInformation::LENGTH {
             return None;
         }
-        let sample_information =
-            SampleInformation::from_bytes(&self.data[self.offset..self.offset + SampleInformation::LENGTH]);
-        self.offset += SampleInformation::LENGTH;
-        Some(sample_information)
+        SampleInformation::parse(&self.data[self.offset..self.offset + SampleInformation::LENGTH]).map_or(
+            None,
+            |sample_information| {
+                self.offset += SampleInformation::LENGTH;
+                Some(sample_information)
+            },
+        )
     }
 }
 
@@ -360,28 +398,28 @@ pub struct SampleInformation {
 impl SampleInformation {
     const LENGTH: usize = 16;
 
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn parse(bytes: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
-        let v = bytes_to_u32(bytes, &mut offset);
+        let v = bytes_to_u32(bytes, &mut offset)?;
         let bit_offset = shift_and_mask_lower(0, 16, v);
         let bit_length = shift_and_mask_lower(16, 8, v) + 1;
         let channel_type = shift_and_mask_lower(24, 4, v);
         let channel_type_qualifiers = ChannelTypeQualifiers::from_bits_truncate(shift_and_mask_lower(28, 4, v));
 
-        let v = bytes_to_u32(bytes, &mut offset);
+        let v = bytes_to_u32(bytes, &mut offset)?;
         let sample_positions = [
             shift_and_mask_lower(0, 8, v),
             shift_and_mask_lower(8, 8, v),
             shift_and_mask_lower(16, 8, v),
             shift_and_mask_lower(24, 8, v),
         ];
-        let lower = bytes_to_u32(bytes, &mut offset);
-        let upper = bytes_to_u32(bytes, &mut offset);
+        let lower = bytes_to_u32(bytes, &mut offset)?;
+        let upper = bytes_to_u32(bytes, &mut offset)?;
 
         assert_eq!(offset, Self::LENGTH);
 
-        Self {
+        Ok(Self {
             bit_offset,
             bit_length,
             channel_type,
@@ -389,34 +427,20 @@ impl SampleInformation {
             sample_positions,
             lower,
             upper,
-        }
-    }
-
-    pub fn is_exponent(&self) -> bool {
-        self.channel_type_qualifiers.contains(ChannelTypeQualifiers::EXPONENT)
-    }
-
-    pub fn is_float(&self) -> bool {
-        self.channel_type_qualifiers.contains(ChannelTypeQualifiers::FLOAT)
-    }
-
-    pub fn is_linear(&self) -> bool {
-        self.channel_type_qualifiers.contains(ChannelTypeQualifiers::LINEAR)
-    }
-
-    pub fn is_signed(&self) -> bool {
-        self.channel_type_qualifiers.contains(ChannelTypeQualifiers::SIGNED)
-    }
-
-    pub fn is_norm(&self) -> bool {
-        self.is_float() && self.upper == F32_1_AS_U32
+        })
     }
 }
 
-fn bytes_to_u32(bytes: &[u8], offset: &mut usize) -> u32 {
-    let v = u32::from_le_bytes(bytes[*offset..*offset + 4].try_into().unwrap());
+fn bytes_to_u32(bytes: &[u8], offset: &mut usize) -> Result<u32, ParseError> {
+    let v = u32::from_le_bytes(
+        bytes
+            .get(*offset..*offset + 4)
+            .ok_or(ParseError::UnexpectedEnd)?
+            .try_into()
+            .unwrap(),
+    );
     *offset += 4;
-    v
+    Ok(v)
 }
 
 fn shift_and_mask_lower(shift: u32, mask: u32, value: u32) -> u32 {
