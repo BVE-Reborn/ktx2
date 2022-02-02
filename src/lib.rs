@@ -120,7 +120,8 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         let start = header.dfd_byte_offset as usize;
         let end = (header.dfd_byte_offset + header.dfd_byte_length) as usize;
         DataFormatDescriptorIterator {
-            data: &self.input.as_ref()[start..end],
+            // start + 4 to skip the data format descriptors total length
+            data: &self.input.as_ref()[start + 4..end],
             offset: 0,
         }
     }
@@ -253,7 +254,7 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct DataFormatDescriptorHeader {
     pub vendor_id: u32,       //: 17;
     pub descriptor_type: u32, //: 15;
