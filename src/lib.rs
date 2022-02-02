@@ -50,12 +50,22 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         if !input.as_ref().starts_with(&KTX2_MAGIC) {
             return Err(ParseError::BadMagic);
         }
-        let header = input.as_ref()[0..Header::LENGTH].try_into().unwrap();
-        Header::from_bytes(header).validate()?;
+        let header_data = input.as_ref()[0..Header::LENGTH].try_into().unwrap();
+        let header = Header::from_bytes(header_data);
+        header.validate()?;
+
+        // Check data format descriptor integrity
+        let mut offset = header.dfd_byte_offset as usize;
+        let length = bytes_to_u32(input.as_ref(), &mut offset)?;
+        if length != header.dfd_byte_length
+            || length != header.kvd_byte_offset - header.dfd_byte_offset
+            || input.as_ref().len() < header.kvd_byte_offset as usize
+        {
+            return Err(ParseError::UnexpectedEnd);
+        }
 
         let result = Self { input };
         result.level_index()?; // Check index integrity
-        result.data_format_descriptors()?; // Check data format descriptor integrity
 
         // Check level data integrity
         let trailing = result.level_index().unwrap().max_by_key(|l| l.offset).unwrap();
@@ -105,47 +115,34 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         &self.input.as_ref()[start..end]
     }
 
-    pub fn data_format_descriptors(&self) -> ParseResult<impl Iterator<Item = DataFormatDescriptor>> {
+    pub fn data_format_descriptors(&self) -> impl Iterator<Item = DataFormatDescriptor> {
         let header = self.header();
         let start = header.dfd_byte_offset as usize;
-        let length: u32 = u32::from_le_bytes(
-            self.input
-                .as_ref()
-                .get(start..start + 4)
-                .ok_or(ParseError::UnexpectedEnd)?
-                .try_into()
-                .unwrap(),
-        );
-        if length != header.dfd_byte_length || length != header.kvd_byte_offset - header.dfd_byte_offset {
-            return Err(ParseError::UnexpectedEnd);
-        }
         let end = (header.dfd_byte_offset + header.dfd_byte_length) as usize;
-        Ok(DataFormatDescriptorIterator {
-            data: self.input.as_ref(),
-            offset: start + 4,
-            end,
-        })
+        DataFormatDescriptorIterator {
+            data: &self.input.as_ref()[start..end],
+            offset: 0,
+        }
     }
 }
 
 struct DataFormatDescriptorIterator<'data> {
     data: &'data [u8],
     offset: usize,
-    end: usize,
 }
 
 impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
     type Item = DataFormatDescriptor<'data>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.offset > self.end - DataFormatDescriptorHeader::LENGTH {
+        if self.offset > self.data.len() - DataFormatDescriptorHeader::LENGTH {
             return None;
         }
         let block_start = self.offset + DataFormatDescriptorHeader::LENGTH;
         DataFormatDescriptorHeader::parse(&self.data[self.offset..block_start]).map_or(
             None,
             |(header, descriptor_block_size)| {
-                if descriptor_block_size == 0 || self.offset > self.end - descriptor_block_size {
+                if descriptor_block_size == 0 || self.offset > self.data.len() - descriptor_block_size {
                     return None;
                 }
                 self.offset += descriptor_block_size;
