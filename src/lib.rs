@@ -4,7 +4,7 @@
 //! - [x] Async reading
 //! - [x] Parsing
 //! - [x] Validating
-//! - [ ] [Data format description](https://github.khronos.org/KTX-Specification/#_data_format_descriptor)
+//! - [x] [Data format description](https://github.khronos.org/KTX-Specification/#_data_format_descriptor)
 //! - [ ] [Key/value data](https://github.khronos.org/KTX-Specification/#_keyvalue_data)
 //
 //! ## Example
