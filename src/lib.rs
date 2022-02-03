@@ -116,35 +116,30 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         DataFormatDescriptorIterator {
             // start + 4 to skip the data format descriptors total length
             data: &self.input.as_ref()[start + 4..end],
-            offset: 0,
         }
     }
 }
 
 struct DataFormatDescriptorIterator<'data> {
     data: &'data [u8],
-    offset: usize,
 }
 
 impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
     type Item = DataFormatDescriptor<'data>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.offset > self.data.len() - DataFormatDescriptorHeader::LENGTH {
+        if self.data.len() < DataFormatDescriptorHeader::LENGTH {
             return None;
         }
-        let block_start = self.offset + DataFormatDescriptorHeader::LENGTH;
-        DataFormatDescriptorHeader::parse(&self.data[self.offset..block_start]).map_or(
+        DataFormatDescriptorHeader::parse(&self.data[..DataFormatDescriptorHeader::LENGTH]).map_or(
             None,
             |(header, descriptor_block_size)| {
-                if descriptor_block_size == 0 || self.offset > self.data.len() - descriptor_block_size {
+                if descriptor_block_size == 0 || self.data.len() < descriptor_block_size {
                     return None;
                 }
-                self.offset += descriptor_block_size;
-                Some(DataFormatDescriptor {
-                    header,
-                    data: &self.data[block_start..self.offset],
-                })
+                let data = &self.data[DataFormatDescriptorHeader::LENGTH..descriptor_block_size];
+                self.data = &self.data[descriptor_block_size..];
+                Some(DataFormatDescriptor { header, data })
             },
         )
     }
@@ -347,32 +342,25 @@ impl<'data> BasicDataFormatDescriptor<'data> {
     }
 
     pub fn sample_information(&self) -> impl Iterator<Item = SampleInformation> + 'data {
-        SampleInformationIterator {
-            data: self.sample_data,
-            offset: 0,
-        }
+        SampleInformationIterator { data: self.sample_data }
     }
 }
 
 struct SampleInformationIterator<'data> {
     data: &'data [u8],
-    offset: usize,
 }
 
 impl<'data> Iterator for SampleInformationIterator<'data> {
     type Item = SampleInformation;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.offset > self.data.len() - SampleInformation::LENGTH {
+        if self.data.len() < SampleInformation::LENGTH {
             return None;
         }
-        SampleInformation::parse(&self.data[self.offset..self.offset + SampleInformation::LENGTH]).map_or(
-            None,
-            |sample_information| {
-                self.offset += SampleInformation::LENGTH;
-                Some(sample_information)
-            },
-        )
+        SampleInformation::parse(&self.data[..SampleInformation::LENGTH]).map_or(None, |sample_information| {
+            self.data = &self.data[SampleInformation::LENGTH..];
+            Some(sample_information)
+        })
     }
 }
 
@@ -408,8 +396,6 @@ impl SampleInformation {
         ];
         let lower = bytes_to_u32(bytes, &mut offset)?;
         let upper = bytes_to_u32(bytes, &mut offset)?;
-
-        assert_eq!(offset, Self::LENGTH);
 
         Ok(Self {
             bit_offset,
