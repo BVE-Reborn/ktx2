@@ -54,13 +54,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         let header = Header::from_bytes(header_data);
         header.validate()?;
 
-        // Check data format descriptor integrity
-        let mut offset = header.dfd_byte_offset as usize;
-        let length = bytes_to_u32(input.as_ref(), &mut offset)?;
-        if length != header.dfd_byte_length
-            || length != header.kvd_byte_offset - header.dfd_byte_offset
-            || input.as_ref().len() < header.kvd_byte_offset as usize
-        {
+        if (header.dfd_byte_offset + header.dfd_byte_length) as usize >= input.as_ref().len() {
             return Err(ParseError::UnexpectedEnd);
         }
 
