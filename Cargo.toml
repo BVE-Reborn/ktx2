@@ -4,7 +4,7 @@ members = [
 
 [package]
 name = "ktx2"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Benjamin Saunders <ben.e.saunders@gmail.com>", "Connor Fitzgerald <connorwadefitzgerald@gmail.com>", "f3kilo <f3kilo@yandex.ru>"]
 edition = "2018"
 description = "Parser for the ktx2 texture container format"

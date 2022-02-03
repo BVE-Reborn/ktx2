@@ -16,9 +16,14 @@ Per Keep a Changelog there are 6 main categories of changes:
 #### Table of Contents
 
 - [Unreleased](#unreleased)
+- [v0.3.0](#v030)
 - [Diffs](#diffs)
 
 ## Unreleased
+
+## v0.3.0
+
+Released 2022-02-03
 
 Initial release under new ownership.
 - Added support for Data Format Descriptor parsing (Rob Swain [@superdump](https://github.com/superdump))
@@ -28,5 +33,5 @@ Initial release under new ownership.
 
 ## Diffs
 
-<!-- Begin Diffs -->
+- [Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v0.3.0...HEAD)
 
