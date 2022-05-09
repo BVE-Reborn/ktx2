@@ -96,10 +96,11 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     }
 
     /// Iterator over the texture's mip levels
-    pub fn levels(&self) -> impl ExactSizeIterator<Item = &[u8]> + '_ {
-        self.level_index()
-            .unwrap()
-            .map(move |level| &self.input.as_ref()[level.offset as usize..(level.offset + level.length_bytes) as usize])
+    pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
+        self.level_index().unwrap().map(move |level| Level {
+            bytes: &self.input.as_ref()[level.offset as usize..(level.offset + level.length_bytes) as usize],
+            uncompressed_length_bytes: level.uncompressed_length_bytes,
+        })
     }
 
     pub fn supercompression_global_data(&self) -> &[u8] {
@@ -172,9 +173,9 @@ pub struct Header {
 }
 
 impl Header {
-    const LENGTH: usize = 80;
+    pub const LENGTH: usize = 80;
 
-    fn from_bytes(data: &[u8; Self::LENGTH]) -> Self {
+    pub fn from_bytes(data: &[u8; Self::LENGTH]) -> Self {
         Self {
             format: Format::new(u32::from_le_bytes(data[12..16].try_into().unwrap())),
             type_size: u32::from_le_bytes(data[16..20].try_into().unwrap()),
@@ -194,7 +195,7 @@ impl Header {
         }
     }
 
-    fn validate(&self) -> ParseResult<()> {
+    pub fn validate(&self) -> ParseResult<()> {
         if self.pixel_width == 0 {
             return Err(ParseError::ZeroWidth);
         }
@@ -205,15 +206,20 @@ impl Header {
     }
 }
 
+pub struct Level<'a> {
+    pub bytes: &'a [u8],
+    pub uncompressed_length_bytes: u64,
+}
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-struct LevelIndex {
-    offset: u64,
-    length_bytes: u64,
-    uncompressed_length_bytes: u64,
+pub struct LevelIndex {
+    pub offset: u64,
+    pub length_bytes: u64,
+    pub uncompressed_length_bytes: u64,
 }
 
 impl LevelIndex {
-    const LENGTH: usize = 24;
+    pub const LENGTH: usize = 24;
 
     pub fn from_bytes(data: &[u8]) -> Self {
         Self {
