@@ -118,6 +118,17 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             data: &self.input.as_ref()[start + 4..end],
         }
     }
+
+    pub fn key_value_data(&self) -> impl Iterator<Item = (&[u8], &[u8])> + '_ {
+        let header = self.header();
+
+        let start = header.kvd_byte_offset as usize;
+        let end = (header.kvd_byte_offset + header.kvd_byte_length) as usize;
+
+        KeyValueDataIterator {
+            data: &self.input.as_ref()[start..end],
+        }
+    }
 }
 
 struct DataFormatDescriptorIterator<'data> {
@@ -142,6 +153,43 @@ impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
                 Some(DataFormatDescriptor { header, data })
             },
         )
+    }
+}
+
+struct KeyValueDataIterator<'data> {
+    data: &'data [u8],
+}
+
+impl<'data> Iterator for KeyValueDataIterator<'data> {
+    type Item = (&'data [u8], &'data [u8]);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.data.len() < 4 {
+            return None;
+        }
+
+        let mut offset = 0;
+
+        let length = bytes_to_u32(self.data, &mut offset).unwrap();
+
+        let key_and_value = &self.data[offset..offset + length as usize];
+
+        // The key is terminated with a NUL character.
+        let key_end_index = key_and_value.iter().position(|&c| c == b'\0').unwrap();
+
+        let key = &key_and_value[..key_end_index];
+        let value = &key_and_value[key_end_index + 1..];
+
+        offset += length as usize;
+
+        // Ensure that we're 4-byte aligned
+        if offset % 4 != 0 {
+            offset += 4 - (offset % 4);
+        }
+
+        self.data = &self.data[offset..];
+
+        Some((key, value))
     }
 }
 
