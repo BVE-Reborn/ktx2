@@ -164,18 +164,14 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
     type Item = (&'data [u8], &'data [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.data.len() < 4 {
-            return None;
-        }
-
         let mut offset = 0;
 
-        let length = bytes_to_u32(self.data, &mut offset).unwrap();
+        let length = bytes_to_u32(self.data, &mut offset).ok()?;
 
         let key_and_value = &self.data[offset..offset + length as usize];
 
         // The key is terminated with a NUL character.
-        let key_end_index = key_and_value.iter().position(|&c| c == b'\0').unwrap();
+        let key_end_index = key_and_value.iter().position(|&c| c == b'\0')?;
 
         let key = &key_and_value[..key_end_index];
         let value = &key_and_value[key_end_index + 1..];
