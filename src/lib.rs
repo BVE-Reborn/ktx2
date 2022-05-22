@@ -170,10 +170,20 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
 
         let key_and_value = &self.data[offset..offset + length as usize];
 
+        offset += length as usize;
+
+        // Ensure that we're 4-byte aligned
+        if offset % 4 != 0 {
+            offset += 4 - (offset % 4);
+        }
+
         // The key is terminated with a NUL character.
         let key_end_index = match key_and_value.iter().position(|&c| c == b'\0') {
             Some(key_and_value) => key_and_value,
-            None => return Some(("", &[])),
+            None => {
+                self.data = &self.data[offset..];
+                return Some(("", &[]));
+            }
         };
 
         let key = &key_and_value[..key_end_index];
@@ -181,15 +191,11 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
 
         let key = match std::str::from_utf8(key) {
             Ok(key) => key,
-            Err(_) => return Some(("", value)),
+            Err(_) => {
+                self.data = &self.data[offset..];
+                return Some(("", value));
+            }
         };
-
-        offset += length as usize;
-
-        // Ensure that we're 4-byte aligned
-        if offset % 4 != 0 {
-            offset += 4 - (offset % 4);
-        }
 
         self.data = &self.data[offset..];
 
