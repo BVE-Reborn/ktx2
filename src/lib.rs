@@ -119,7 +119,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         }
     }
 
-    pub fn key_value_data(&self) -> impl Iterator<Item = (&[u8], &[u8])> + '_ {
+    pub fn key_value_data(&self) -> impl Iterator<Item = (&str, &[u8])> + '_ {
         let header = self.header();
 
         let start = header.kvd_byte_offset as usize;
@@ -161,7 +161,7 @@ struct KeyValueDataIterator<'data> {
 }
 
 impl<'data> Iterator for KeyValueDataIterator<'data> {
-    type Item = (&'data [u8], &'data [u8]);
+    type Item = (&'data str, &'data [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut offset = 0;
@@ -171,10 +171,18 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
         let key_and_value = &self.data[offset..offset + length as usize];
 
         // The key is terminated with a NUL character.
-        let key_end_index = key_and_value.iter().position(|&c| c == b'\0')?;
+        let key_end_index = match key_and_value.iter().position(|&c| c == b'\0') {
+            Some(key_and_value) => key_and_value,
+            None => return Some(("", &[])),
+        };
 
         let key = &key_and_value[..key_end_index];
         let value = &key_and_value[key_end_index + 1..];
+
+        let key = match std::str::from_utf8(key) {
+            Ok(key) => key,
+            Err(_) => return Some(("", value)),
+        };
 
         offset += length as usize;
 

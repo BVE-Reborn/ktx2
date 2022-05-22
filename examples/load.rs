@@ -11,7 +11,7 @@ fn main() {
     assert_eq!(key_value_pairs.len(), 2);
 
     for (k, v) in key_value_pairs {
-        println!("Key '{}': {}", String::from_utf8_lossy(k), String::from_utf8_lossy(v));
+        println!("Key '{}': {}", k, String::from_utf8_lossy(v));
     }
 
     let levels = reader.levels().collect::<Vec<_>>();
