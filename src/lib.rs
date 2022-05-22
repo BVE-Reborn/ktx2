@@ -166,34 +166,47 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
     fn next(&mut self) -> Option<Self::Item> {
         let mut offset = 0;
 
-        let length = bytes_to_u32(self.data, &mut offset).ok()?;
+        loop {
+            let length = bytes_to_u32(self.data, &mut offset).ok()?;
 
-        let key_and_value = &self.data[offset..offset + length as usize];
+            let start_offset = offset;
 
-        offset += length as usize;
+            offset += length as usize;
 
-        // Ensure that we're 4-byte aligned
-        if offset % 4 != 0 {
-            offset += 4 - (offset % 4);
+            // Ensure that we're 4-byte aligned
+            if offset % 4 != 0 {
+                offset += 4 - (offset % 4);
+            }
+
+            let key_and_value = match self.data.get(start_offset..start_offset + length as usize) {
+                Some(key_and_value) => key_and_value,
+                None => continue,
+            };
+
+            // The key is terminated with a NUL character.
+            let key_end_index = match key_and_value.iter().position(|&c| c == b'\0') {
+                Some(key_and_value) => key_and_value,
+                None => continue,
+            };
+
+            let key = &key_and_value[..key_end_index];
+            let value = &key_and_value[key_end_index + 1..];
+
+            let key = match std::str::from_utf8(key) {
+                Ok(key) => key,
+                Err(_) => continue,
+            };
+
+            self.data = match self.data.get(offset..) {
+                Some(data) => data,
+                // As we already have a valid key-value pair but an invalid
+                // offset (maybe the padding was missing), we want to return
+                // the key value pair but ensure that the iterator ends here.
+                None => &[],
+            };
+
+            return Some((key, value));
         }
-
-        self.data = &self.data[offset..];
-
-        // The key is terminated with a NUL character.
-        let key_end_index = match key_and_value.iter().position(|&c| c == b'\0') {
-            Some(key_and_value) => key_and_value,
-            None => return Some(("", &[])),
-        };
-
-        let key = &key_and_value[..key_end_index];
-        let value = &key_and_value[key_end_index + 1..];
-
-        let key = match std::str::from_utf8(key) {
-            Ok(key) => key,
-            Err(_) => return Some(("", value)),
-        };
-
-        Some((key, value))
     }
 }
 
@@ -475,4 +488,23 @@ fn bytes_to_u32(bytes: &[u8], offset: &mut usize) -> Result<u32, ParseError> {
 
 fn shift_and_mask_lower(shift: u32, mask: u32, value: u32) -> u32 {
     (value >> shift) & ((1 << mask) - 1)
+}
+
+#[test]
+fn test_malformed_key_value_data_handling() {
+    let data = [
+        // Regular key-value pair
+        &7_u32.to_le_bytes()[..],
+        b"xyz\0123 ",
+        // Malformed key-value pair with missing NUL byte
+        &11_u32.to_le_bytes()[..],
+        b"abcdefghi!! ",
+        // Regular key-value pair again
+        &7_u32.to_le_bytes()[..],
+        b"xyz\0123",
+    ];
+
+    let iterator = KeyValueDataIterator { data: &data.concat() };
+
+    assert_eq!(iterator.count(), 2);
 }
