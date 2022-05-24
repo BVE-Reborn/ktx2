@@ -504,13 +504,15 @@ fn test_malformed_key_value_data_handling() {
         b"abcdefghi!! ",
         // Regular key-value pair again
         &7_u32.to_le_bytes()[..],
-        b"xyz\0123",
+        b"abc\0987",
         &1000_u32.to_le_bytes()[..],
         &[1; 1000],
         &u32::MAX.to_le_bytes()[..],
     ];
 
-    let iterator = KeyValueDataIterator { data: &data.concat() };
+    let mut iterator = KeyValueDataIterator { data: &data.concat() };
 
-    assert_eq!(iterator.count(), 2);
+    assert_eq!(iterator.next(), Some(("xyz", &b"123"[..])));
+    assert_eq!(iterator.next(), Some(("abc", &b"987"[..])));
+    assert_eq!(iterator.next(), None);
 }
