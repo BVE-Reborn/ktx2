@@ -21,7 +21,17 @@ Per Keep a Changelog there are 6 main categories of changes:
 
 ## Unreleased
 
-Added a `key_value_data` function to the reader that returns an iterator over key-value pairs (by @expenses).
+- Added a `key_value_data` function to the reader that returns an iterator over key-value pairs (by @expenses).
+- `Reader::levels` now returns an iterator over `Level` structs, which contain the bytes of the level as well as the uncompressed length (by @expenses).
+- Added `Header::from_bytes` and `LevelIndex::from_bytes` (by @expenses).
+- Made the following fields public (by @expenses):
+  - `Header::LENGTH`
+  - `LevelIndex::LENGTH`
+  - `LevelIndex::byte_offset`
+  - `LevelIndex::byte_length`
+  - `LevelIndex::uncompressed_byte_length`
+  - `Level::bytes`
+  - `Level::uncompressed_byte_length`
 
 ## v0.3.0
 
