@@ -231,6 +231,7 @@ pub struct Header {
     pub index: Index,
 }
 
+/// An index giving the byte offsets from the start of the file and byte sizes of the various sections of the KTX file.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Index {
     pub dfd_byte_offset: u32,
