@@ -7,6 +7,13 @@ fn main() {
     println!("Header: {:#?}", header);
     assert_head(header);
 
+    let key_value_pairs = reader.key_value_data().collect::<Vec<_>>();
+    assert_eq!(key_value_pairs.len(), 2);
+
+    for (k, v) in key_value_pairs {
+        println!("Key '{}': {}", k, String::from_utf8_lossy(v));
+    }
+
     let levels = reader.levels().map(|level| level.bytes).collect::<Vec<_>>();
     assert_eq!(levels.len(), header.level_count.max(1) as usize);
 

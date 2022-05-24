@@ -116,6 +116,17 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             data: &self.input.as_ref()[start + 4..end],
         }
     }
+
+    pub fn key_value_data(&self) -> impl Iterator<Item = (&str, &[u8])> + '_ {
+        let header = self.header();
+
+        let start = header.kvd_byte_offset as usize;
+        let end = (header.kvd_byte_offset + header.kvd_byte_length) as usize;
+
+        KeyValueDataIterator {
+            data: &self.input.as_ref()[start..end],
+        }
+    }
 }
 
 struct DataFormatDescriptorIterator<'data> {
@@ -140,6 +151,62 @@ impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
                 Some(DataFormatDescriptor { header, data })
             },
         )
+    }
+}
+
+struct KeyValueDataIterator<'data> {
+    data: &'data [u8],
+}
+
+impl<'data> Iterator for KeyValueDataIterator<'data> {
+    type Item = (&'data str, &'data [u8]);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut offset = 0;
+
+        loop {
+            let length = bytes_to_u32(self.data, &mut offset).ok()?;
+
+            let start_offset = offset;
+
+            offset = offset.checked_add(length as usize)?;
+
+            let end_offset = offset;
+
+            // Ensure that we're 4-byte aligned
+            if offset % 4 != 0 {
+                offset += 4 - (offset % 4);
+            }
+
+            let key_and_value = match self.data.get(start_offset..end_offset) {
+                Some(key_and_value) => key_and_value,
+                None => continue,
+            };
+
+            // The key is terminated with a NUL character.
+            let key_end_index = match key_and_value.iter().position(|&c| c == b'\0') {
+                Some(index) => index,
+                None => continue,
+            };
+
+            let key = &key_and_value[..key_end_index];
+            let value = &key_and_value[key_end_index + 1..];
+
+            let key = match std::str::from_utf8(key) {
+                Ok(key) => key,
+                Err(_) => continue,
+            };
+
+            self.data = match self.data.get(offset..) {
+                Some(data) => data,
+                // As we already have a valid key-value pair but an invalid
+                // offset (maybe the padding was missing), we want to return
+                // the key value pair but ensure that the iterator ends here.
+                None => &[],
+            };
+
+            return Some((key, value));
+        }
     }
 }
 
@@ -429,4 +496,29 @@ fn bytes_to_u32(bytes: &[u8], offset: &mut usize) -> Result<u32, ParseError> {
 
 fn shift_and_mask_lower(shift: u32, mask: u32, value: u32) -> u32 {
     (value >> shift) & ((1 << mask) - 1)
+}
+
+#[test]
+fn test_malformed_key_value_data_handling() {
+    let data = [
+        &0_u32.to_le_bytes()[..],
+        // Regular key-value pair
+        &7_u32.to_le_bytes()[..],
+        b"xyz\0123 ",
+        // Malformed key-value pair with missing NUL byte
+        &11_u32.to_le_bytes()[..],
+        b"abcdefghi!! ",
+        // Regular key-value pair again
+        &7_u32.to_le_bytes()[..],
+        b"abc\0987",
+        &1000_u32.to_le_bytes()[..],
+        &[1; 1000],
+        &u32::MAX.to_le_bytes()[..],
+    ];
+
+    let mut iterator = KeyValueDataIterator { data: &data.concat() };
+
+    assert_eq!(iterator.next(), Some(("xyz", &b"123"[..])));
+    assert_eq!(iterator.next(), Some(("abc", &b"987"[..])));
+    assert_eq!(iterator.next(), None);
 }

@@ -13,7 +13,6 @@ Parser for the [ktx2](https://github.khronos.org/KTX-Specification/) texture con
 - [x] Parsing
 - [x] Validating
 - [x] [Data format description](https://github.khronos.org/KTX-Specification/#_data_format_descriptor)
-- [ ] [Key/value data](https://github.khronos.org/KTX-Specification/#_keyvalue_data)
+- [x] [Key/value data](https://github.khronos.org/KTX-Specification/#_keyvalue_data)
 
 License: Apache-2.0
-
