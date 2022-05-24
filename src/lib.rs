@@ -171,21 +171,23 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
 
             let start_offset = offset;
 
-            offset += length as usize;
+            offset = offset.checked_add(length as usize)?;
+
+            let end_offset = offset;
 
             // Ensure that we're 4-byte aligned
             if offset % 4 != 0 {
                 offset += 4 - (offset % 4);
             }
 
-            let key_and_value = match self.data.get(start_offset..start_offset + length as usize) {
+            let key_and_value = match self.data.get(start_offset..end_offset) {
                 Some(key_and_value) => key_and_value,
                 None => continue,
             };
 
             // The key is terminated with a NUL character.
             let key_end_index = match key_and_value.iter().position(|&c| c == b'\0') {
-                Some(key_and_value) => key_and_value,
+                Some(index) => index,
                 None => continue,
             };
 
