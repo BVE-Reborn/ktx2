@@ -495,6 +495,7 @@ fn shift_and_mask_lower(shift: u32, mask: u32, value: u32) -> u32 {
 #[test]
 fn test_malformed_key_value_data_handling() {
     let data = [
+        &0_u32.to_le_bytes()[..],
         // Regular key-value pair
         &7_u32.to_le_bytes()[..],
         b"xyz\0123 ",
@@ -504,6 +505,9 @@ fn test_malformed_key_value_data_handling() {
         // Regular key-value pair again
         &7_u32.to_le_bytes()[..],
         b"xyz\0123",
+        &1000_u32.to_le_bytes()[..],
+        &[1; 1000],
+        &u32::MAX.to_le_bytes()[..],
     ];
 
     let iterator = KeyValueDataIterator { data: &data.concat() };
