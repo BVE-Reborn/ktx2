@@ -39,6 +39,7 @@ use core::convert::TryInto;
 /// Decodes KTX2 texture data
 pub struct Reader<Data: AsRef<[u8]>> {
     input: Data,
+    header: Header,
 }
 
 impl<Data: AsRef<[u8]>> Reader<Data> {
@@ -47,23 +48,19 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         if input.as_ref().len() < Header::LENGTH {
             return Err(ParseError::UnexpectedEnd);
         }
-        if !input.as_ref().starts_with(&KTX2_MAGIC) {
-            return Err(ParseError::BadMagic);
-        }
         let header_data = input.as_ref()[0..Header::LENGTH].try_into().unwrap();
-        let header = Header::from_bytes(header_data);
-        header.validate()?;
+        let header = Header::from_bytes(header_data)?;
 
         if (header.dfd_byte_offset + header.dfd_byte_length) as usize >= input.as_ref().len() {
             return Err(ParseError::UnexpectedEnd);
         }
 
-        let result = Self { input };
+        let result = Self { input, header };
         result.level_index()?; // Check index integrity
 
         // Check level data integrity
-        let trailing = result.level_index().unwrap().max_by_key(|l| l.offset).unwrap();
-        if trailing.offset + trailing.length_bytes > result.input.as_ref().len() as u64 {
+        let trailing = result.level_index().unwrap().max_by_key(|l| l.byte_offset).unwrap();
+        if trailing.byte_offset + trailing.byte_length > result.input.as_ref().len() as u64 {
             return Err(ParseError::UnexpectedEnd);
         }
 
@@ -79,9 +76,10 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             .as_ref()
             .get(Header::LENGTH..level_index_end_byte)
             .ok_or(ParseError::UnexpectedEnd)?;
-        Ok(level_index_bytes
-            .chunks_exact(LevelIndex::LENGTH)
-            .map(LevelIndex::from_bytes))
+        Ok(level_index_bytes.chunks_exact(LevelIndex::LENGTH).map(|data| {
+            let level_data = data.try_into().unwrap();
+            LevelIndex::from_bytes(&level_data)
+        }))
     }
 
     /// Access underlying raw bytes
@@ -91,15 +89,15 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 
     /// Container-level metadata
     pub fn header(&self) -> Header {
-        let bytes = self.input.as_ref()[0..Header::LENGTH].try_into().unwrap();
-        Header::from_bytes(bytes)
+        self.header
     }
 
     /// Iterator over the texture's mip levels
-    pub fn levels(&self) -> impl ExactSizeIterator<Item = &[u8]> + '_ {
-        self.level_index()
-            .unwrap()
-            .map(move |level| &self.input.as_ref()[level.offset as usize..(level.offset + level.length_bytes) as usize])
+    pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
+        self.level_index().unwrap().map(move |level| Level {
+            bytes: &self.input.as_ref()[level.byte_offset as usize..(level.byte_offset + level.byte_length) as usize],
+            uncompressed_byte_length: level.uncompressed_byte_length,
+        })
     }
 
     pub fn supercompression_global_data(&self) -> &[u8] {
@@ -172,10 +170,14 @@ pub struct Header {
 }
 
 impl Header {
-    const LENGTH: usize = 80;
+    pub const LENGTH: usize = 80;
 
-    fn from_bytes(data: &[u8; Self::LENGTH]) -> Self {
-        Self {
+    pub fn from_bytes(data: &[u8; Self::LENGTH]) -> ParseResult<Self> {
+        if !data.starts_with(&KTX2_MAGIC) {
+            return Err(ParseError::BadMagic);
+        }
+
+        let header = Self {
             format: Format::new(u32::from_le_bytes(data[12..16].try_into().unwrap())),
             type_size: u32::from_le_bytes(data[16..20].try_into().unwrap()),
             pixel_width: u32::from_le_bytes(data[20..24].try_into().unwrap()),
@@ -191,35 +193,39 @@ impl Header {
             kvd_byte_length: u32::from_le_bytes(data[60..64].try_into().unwrap()),
             sgd_byte_offset: u64::from_le_bytes(data[64..72].try_into().unwrap()),
             sgd_byte_length: u64::from_le_bytes(data[72..80].try_into().unwrap()),
-        }
-    }
+        };
 
-    fn validate(&self) -> ParseResult<()> {
-        if self.pixel_width == 0 {
+        if header.pixel_width == 0 {
             return Err(ParseError::ZeroWidth);
         }
-        if self.face_count == 0 {
+        if header.face_count == 0 {
             return Err(ParseError::ZeroFaceCount);
         }
-        Ok(())
+
+        Ok(header)
     }
+}
+
+pub struct Level<'a> {
+    pub bytes: &'a [u8],
+    pub uncompressed_byte_length: u64,
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
-struct LevelIndex {
-    offset: u64,
-    length_bytes: u64,
-    uncompressed_length_bytes: u64,
+pub struct LevelIndex {
+    pub byte_offset: u64,
+    pub byte_length: u64,
+    pub uncompressed_byte_length: u64,
 }
 
 impl LevelIndex {
-    const LENGTH: usize = 24;
+    pub const LENGTH: usize = 24;
 
-    pub fn from_bytes(data: &[u8]) -> Self {
+    pub fn from_bytes(data: &[u8; Self::LENGTH]) -> Self {
         Self {
-            offset: u64::from_le_bytes(data[0..8].try_into().unwrap()),
-            length_bytes: u64::from_le_bytes(data[8..16].try_into().unwrap()),
-            uncompressed_length_bytes: u64::from_le_bytes(data[16..24].try_into().unwrap()),
+            byte_offset: u64::from_le_bytes(data[0..8].try_into().unwrap()),
+            byte_length: u64::from_le_bytes(data[8..16].try_into().unwrap()),
+            uncompressed_byte_length: u64::from_le_bytes(data[16..24].try_into().unwrap()),
         }
     }
 }
