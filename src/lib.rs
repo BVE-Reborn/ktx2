@@ -95,7 +95,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Iterator over the texture's mip levels
     pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
         self.level_index().unwrap().map(move |level| Level {
-            bytes: &self.input.as_ref()[level.byte_offset as usize..(level.byte_offset + level.byte_length) as usize],
+            data: &self.input.as_ref()[level.byte_offset as usize..(level.byte_offset + level.byte_length) as usize],
             uncompressed_byte_length: level.uncompressed_byte_length,
         })
     }
@@ -274,7 +274,7 @@ impl Header {
 }
 
 pub struct Level<'a> {
-    pub bytes: &'a [u8],
+    pub data: &'a [u8],
     pub uncompressed_byte_length: u64,
 }
 
