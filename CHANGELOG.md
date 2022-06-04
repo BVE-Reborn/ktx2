@@ -31,7 +31,7 @@ Per Keep a Changelog there are 6 main categories of changes:
   - `LevelIndex::byte_offset`
   - `LevelIndex::byte_length`
   - `LevelIndex::uncompressed_byte_length`
-  - `Level::bytes`
+  - `Level::data`
   - `Level::uncompressed_byte_length`
 
 ## v0.3.0

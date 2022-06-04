@@ -51,17 +51,56 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         let header_data = input.as_ref()[0..Header::LENGTH].try_into().unwrap();
         let header = Header::from_bytes(header_data)?;
 
-        if (header.index.dfd_byte_offset + header.index.dfd_byte_length) as usize >= input.as_ref().len() {
+        // Check DFD bounds
+        let dfd_start = header
+            .index
+            .dfd_byte_offset
+            .checked_add(4)
+            .ok_or(ParseError::UnexpectedEnd)?;
+        let dfd_end = header
+            .index
+            .dfd_byte_offset
+            .checked_add(header.index.dfd_byte_length)
+            .ok_or(ParseError::UnexpectedEnd)?;
+        if dfd_end < dfd_start || dfd_end as usize >= input.as_ref().len() {
+            return Err(ParseError::UnexpectedEnd);
+        }
+
+        // Check SGD bounds
+        if header
+            .index
+            .sgd_byte_offset
+            .checked_add(header.index.sgd_byte_length)
+            .ok_or(ParseError::UnexpectedEnd)?
+            >= input.as_ref().len() as u64
+        {
+            return Err(ParseError::UnexpectedEnd);
+        }
+
+        // Check KVD bounds
+        if header
+            .index
+            .kvd_byte_offset
+            .checked_add(header.index.kvd_byte_length)
+            .ok_or(ParseError::UnexpectedEnd)? as usize
+            >= input.as_ref().len()
+        {
             return Err(ParseError::UnexpectedEnd);
         }
 
         let result = Self { input, header };
-        result.level_index()?; // Check index integrity
+        let index = result.level_index()?; // Check index integrity
 
-        // Check level data integrity
-        let trailing = result.level_index().unwrap().max_by_key(|l| l.byte_offset).unwrap();
-        if trailing.byte_offset + trailing.byte_length > result.input.as_ref().len() as u64 {
-            return Err(ParseError::UnexpectedEnd);
+        // Check level data bounds
+        for level in index {
+            if level
+                .byte_offset
+                .checked_add(level.byte_length)
+                .ok_or(ParseError::UnexpectedEnd)?
+                > result.input.as_ref().len() as u64
+            {
+                return Err(ParseError::UnexpectedEnd);
+            }
         }
 
         Ok(result)
@@ -70,7 +109,13 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     fn level_index(&self) -> ParseResult<impl ExactSizeIterator<Item = LevelIndex> + '_> {
         let level_count = self.header().level_count.max(1) as usize;
 
-        let level_index_end_byte = Header::LENGTH + level_count * LevelIndex::LENGTH;
+        let level_index_end_byte = Header::LENGTH
+            .checked_add(
+                level_count
+                    .checked_mul(LevelIndex::LENGTH)
+                    .ok_or(ParseError::UnexpectedEnd)?,
+            )
+            .ok_or(ParseError::UnexpectedEnd)?;
         let level_index_bytes = self
             .input
             .as_ref()
@@ -95,7 +140,8 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Iterator over the texture's mip levels
     pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
         self.level_index().unwrap().map(move |level| Level {
-            bytes: &self.input.as_ref()[level.byte_offset as usize..(level.byte_offset + level.byte_length) as usize],
+            // Bounds-checking previously performed in `new`
+            data: &self.input.as_ref()[level.byte_offset as usize..(level.byte_offset + level.byte_length) as usize],
             uncompressed_byte_length: level.uncompressed_byte_length,
         })
     }
@@ -103,6 +149,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     pub fn supercompression_global_data(&self) -> &[u8] {
         let header = self.header();
         let start = header.index.sgd_byte_offset as usize;
+        // Bounds-checking previously performed in `new`
         let end = (header.index.sgd_byte_offset + header.index.sgd_byte_length) as usize;
         &self.input.as_ref()[start..end]
     }
@@ -110,6 +157,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     pub fn data_format_descriptors(&self) -> impl Iterator<Item = DataFormatDescriptor> {
         let header = self.header();
         let start = header.index.dfd_byte_offset as usize;
+        // Bounds-checking previously performed in `new`
         let end = (header.index.dfd_byte_offset + header.index.dfd_byte_length) as usize;
         DataFormatDescriptorIterator {
             // start + 4 to skip the data format descriptors total length
@@ -121,6 +169,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         let header = self.header();
 
         let start = header.index.kvd_byte_offset as usize;
+        // Bounds-checking previously performed in `new`
         let end = (header.index.kvd_byte_offset + header.index.kvd_byte_length) as usize;
 
         KeyValueDataIterator {
@@ -308,7 +357,7 @@ impl Header {
 }
 
 pub struct Level<'a> {
-    pub bytes: &'a [u8],
+    pub data: &'a [u8],
     pub uncompressed_byte_length: u64,
 }
 
