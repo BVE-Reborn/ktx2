@@ -52,10 +52,15 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         let header = Header::from_bytes(header_data)?;
 
         // Check DFD bounds
-        let dfd_start = header.dfd_byte_offset.checked_add(4).ok_or(ParseError::UnexpectedEnd)?;
-        let dfd_end = header
+        let dfd_start = header
+            .index
             .dfd_byte_offset
-            .checked_add(header.dfd_byte_length)
+            .checked_add(4)
+            .ok_or(ParseError::UnexpectedEnd)?;
+        let dfd_end = header
+            .index
+            .dfd_byte_offset
+            .checked_add(header.index.dfd_byte_length)
             .ok_or(ParseError::UnexpectedEnd)?;
         if dfd_end < dfd_start || dfd_end as usize >= input.as_ref().len() {
             return Err(ParseError::UnexpectedEnd);
@@ -63,8 +68,9 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 
         // Check SGD bounds
         if header
+            .index
             .sgd_byte_offset
-            .checked_add(header.sgd_byte_length)
+            .checked_add(header.index.sgd_byte_length)
             .ok_or(ParseError::UnexpectedEnd)?
             >= input.as_ref().len() as u64
         {
@@ -73,8 +79,9 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 
         // Check KVD bounds
         if header
+            .index
             .kvd_byte_offset
-            .checked_add(header.kvd_byte_length)
+            .checked_add(header.index.kvd_byte_length)
             .ok_or(ParseError::UnexpectedEnd)? as usize
             >= input.as_ref().len()
         {
@@ -141,17 +148,17 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
 
     pub fn supercompression_global_data(&self) -> &[u8] {
         let header = self.header();
-        let start = header.sgd_byte_offset as usize;
+        let start = header.index.sgd_byte_offset as usize;
         // Bounds-checking previously performed in `new`
-        let end = (header.sgd_byte_offset + header.sgd_byte_length) as usize;
+        let end = (header.index.sgd_byte_offset + header.index.sgd_byte_length) as usize;
         &self.input.as_ref()[start..end]
     }
 
     pub fn data_format_descriptors(&self) -> impl Iterator<Item = DataFormatDescriptor> {
         let header = self.header();
-        let start = header.dfd_byte_offset as usize;
+        let start = header.index.dfd_byte_offset as usize;
         // Bounds-checking previously performed in `new`
-        let end = (header.dfd_byte_offset + header.dfd_byte_length) as usize;
+        let end = (header.index.dfd_byte_offset + header.index.dfd_byte_length) as usize;
         DataFormatDescriptorIterator {
             // start + 4 to skip the data format descriptors total length
             data: &self.input.as_ref()[start + 4..end],
@@ -161,9 +168,9 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     pub fn key_value_data(&self) -> impl Iterator<Item = (&str, &[u8])> + '_ {
         let header = self.header();
 
-        let start = header.kvd_byte_offset as usize;
+        let start = header.index.kvd_byte_offset as usize;
         // Bounds-checking previously performed in `new`
-        let end = (header.kvd_byte_offset + header.kvd_byte_length) as usize;
+        let end = (header.index.kvd_byte_offset + header.index.kvd_byte_length) as usize;
 
         KeyValueDataIterator {
             data: &self.input.as_ref()[start..end],
@@ -270,12 +277,18 @@ pub struct Header {
     pub face_count: u32,
     pub level_count: u32,
     pub supercompression_scheme: Option<SupercompressionScheme>,
-    dfd_byte_offset: u32,
-    dfd_byte_length: u32,
-    kvd_byte_offset: u32,
-    kvd_byte_length: u32,
-    sgd_byte_offset: u64,
-    sgd_byte_length: u64,
+    pub index: Index,
+}
+
+/// An index giving the byte offsets from the start of the file and byte sizes of the various sections of the KTX file.
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub struct Index {
+    pub dfd_byte_offset: u32,
+    pub dfd_byte_length: u32,
+    pub kvd_byte_offset: u32,
+    pub kvd_byte_length: u32,
+    pub sgd_byte_offset: u64,
+    pub sgd_byte_length: u64,
 }
 
 impl Header {
@@ -296,12 +309,14 @@ impl Header {
             face_count: u32::from_le_bytes(data[36..40].try_into().unwrap()),
             level_count: u32::from_le_bytes(data[40..44].try_into().unwrap()),
             supercompression_scheme: SupercompressionScheme::new(u32::from_le_bytes(data[44..48].try_into().unwrap())),
-            dfd_byte_offset: u32::from_le_bytes(data[48..52].try_into().unwrap()),
-            dfd_byte_length: u32::from_le_bytes(data[52..56].try_into().unwrap()),
-            kvd_byte_offset: u32::from_le_bytes(data[56..60].try_into().unwrap()),
-            kvd_byte_length: u32::from_le_bytes(data[60..64].try_into().unwrap()),
-            sgd_byte_offset: u64::from_le_bytes(data[64..72].try_into().unwrap()),
-            sgd_byte_length: u64::from_le_bytes(data[72..80].try_into().unwrap()),
+            index: Index {
+                dfd_byte_offset: u32::from_le_bytes(data[48..52].try_into().unwrap()),
+                dfd_byte_length: u32::from_le_bytes(data[52..56].try_into().unwrap()),
+                kvd_byte_offset: u32::from_le_bytes(data[56..60].try_into().unwrap()),
+                kvd_byte_length: u32::from_le_bytes(data[60..64].try_into().unwrap()),
+                sgd_byte_offset: u64::from_le_bytes(data[64..72].try_into().unwrap()),
+                sgd_byte_length: u64::from_le_bytes(data[72..80].try_into().unwrap()),
+            },
         };
 
         if header.pixel_width == 0 {
@@ -312,6 +327,32 @@ impl Header {
         }
 
         Ok(header)
+    }
+
+    pub fn as_bytes(&self) -> [u8; Self::LENGTH] {
+        let mut bytes = [0; Self::LENGTH];
+
+        let format = self.format.map(|format| format.0.get()).unwrap_or(0);
+        let supercompression_scheme = self.supercompression_scheme.map(|scheme| scheme.0.get()).unwrap_or(0);
+
+        bytes[0..12].copy_from_slice(&KTX2_MAGIC);
+        bytes[12..16].copy_from_slice(&format.to_le_bytes()[..]);
+        bytes[16..20].copy_from_slice(&self.type_size.to_le_bytes()[..]);
+        bytes[20..24].copy_from_slice(&self.pixel_width.to_le_bytes()[..]);
+        bytes[24..28].copy_from_slice(&self.pixel_height.to_le_bytes()[..]);
+        bytes[28..32].copy_from_slice(&self.pixel_depth.to_le_bytes()[..]);
+        bytes[32..36].copy_from_slice(&self.layer_count.to_le_bytes()[..]);
+        bytes[36..40].copy_from_slice(&self.face_count.to_le_bytes()[..]);
+        bytes[40..44].copy_from_slice(&self.level_count.to_le_bytes()[..]);
+        bytes[44..48].copy_from_slice(&supercompression_scheme.to_le_bytes()[..]);
+        bytes[48..52].copy_from_slice(&self.index.dfd_byte_offset.to_le_bytes()[..]);
+        bytes[52..56].copy_from_slice(&self.index.dfd_byte_length.to_le_bytes()[..]);
+        bytes[56..60].copy_from_slice(&self.index.kvd_byte_offset.to_le_bytes()[..]);
+        bytes[60..64].copy_from_slice(&self.index.kvd_byte_length.to_le_bytes()[..]);
+        bytes[64..72].copy_from_slice(&self.index.sgd_byte_offset.to_le_bytes()[..]);
+        bytes[72..80].copy_from_slice(&self.index.sgd_byte_length.to_le_bytes()[..]);
+
+        bytes
     }
 }
 
@@ -336,6 +377,16 @@ impl LevelIndex {
             byte_length: u64::from_le_bytes(data[8..16].try_into().unwrap()),
             uncompressed_byte_length: u64::from_le_bytes(data[16..24].try_into().unwrap()),
         }
+    }
+
+    pub fn as_bytes(&self) -> [u8; Self::LENGTH] {
+        let mut bytes = [0; Self::LENGTH];
+
+        bytes[0..8].copy_from_slice(&self.byte_offset.to_le_bytes()[..]);
+        bytes[8..16].copy_from_slice(&self.byte_length.to_le_bytes()[..]);
+        bytes[16..24].copy_from_slice(&self.uncompressed_byte_length.to_le_bytes()[..]);
+
+        bytes
     }
 }
 
