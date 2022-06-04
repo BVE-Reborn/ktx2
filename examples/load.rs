@@ -14,7 +14,7 @@ fn main() {
         println!("Key '{}': {}", k, String::from_utf8_lossy(v));
     }
 
-    let levels = reader.levels().map(|level| level.bytes).collect::<Vec<_>>();
+    let levels = reader.levels().map(|level| level.data).collect::<Vec<_>>();
     assert_eq!(levels.len(), header.level_count.max(1) as usize);
 
     let data = reader.data();
