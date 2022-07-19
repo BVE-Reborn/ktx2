@@ -166,7 +166,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     }
 
     /// Iterator over the key-value pairs
-    pub fn key_value_data(&self) -> impl Iterator<Item = (&str, &[u8])> + '_ {
+    pub fn key_value_data(&self) -> KeyValueDataIterator {
         let header = self.header();
 
         let start = header.index.kvd_byte_offset as usize;
@@ -208,7 +208,10 @@ pub struct KeyValueDataIterator<'data> {
 }
 
 impl<'data> KeyValueDataIterator<'data> {
-    /// Create a new iterator.
+    /// Create a new iterator from the key-value data section of the KTX2 file.
+    ///
+    /// From the start of the file, this is a slice between [`Index::kvd_byte_offset`]
+    /// and [`Index::kvd_byte_offset`] + [`Index::kvd_byte_length`].
     pub fn new(data: &'data [u8]) -> Self {
         Self { data }
     }
