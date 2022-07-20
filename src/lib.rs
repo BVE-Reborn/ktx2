@@ -165,16 +165,15 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         }
     }
 
-    pub fn key_value_data(&self) -> impl Iterator<Item = (&str, &[u8])> + '_ {
+    /// Iterator over the key-value pairs
+    pub fn key_value_data(&self) -> KeyValueDataIterator {
         let header = self.header();
 
         let start = header.index.kvd_byte_offset as usize;
         // Bounds-checking previously performed in `new`
         let end = (header.index.kvd_byte_offset + header.index.kvd_byte_length) as usize;
 
-        KeyValueDataIterator {
-            data: &self.input.as_ref()[start..end],
-        }
+        KeyValueDataIterator::new(&self.input.as_ref()[start..end])
     }
 }
 
@@ -203,8 +202,19 @@ impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
     }
 }
 
-struct KeyValueDataIterator<'data> {
+/// An iterator that parses the key-value pairs in the KTX2 file.
+pub struct KeyValueDataIterator<'data> {
     data: &'data [u8],
+}
+
+impl<'data> KeyValueDataIterator<'data> {
+    /// Create a new iterator from the key-value data section of the KTX2 file.
+    ///
+    /// From the start of the file, this is a slice between [`Index::kvd_byte_offset`]
+    /// and [`Index::kvd_byte_offset`] + [`Index::kvd_byte_length`].
+    pub fn new(data: &'data [u8]) -> Self {
+        Self { data }
+    }
 }
 
 impl<'data> Iterator for KeyValueDataIterator<'data> {
@@ -280,7 +290,7 @@ pub struct Header {
     pub index: Index,
 }
 
-/// An index giving the byte offsets from the start of the file and byte sizes of the various sections of the KTX file.
+/// An index giving the byte offsets from the start of the file and byte sizes of the various sections of the KTX2 file.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Index {
     pub dfd_byte_offset: u32,
