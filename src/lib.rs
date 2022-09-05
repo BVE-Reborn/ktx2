@@ -463,11 +463,11 @@ pub struct DataFormatDescriptor<'data> {
 }
 
 pub struct BasicDataFormatDescriptor<'data> {
-    /// None means Unspecified or is an otherwise unknown value
+    /// None means Unspecified
     pub color_model: Option<ColorModel>, //: 8;
-    /// None means Unspecified or is an otherwise unknown value
+    /// None means Unspecified
     pub color_primaries: Option<ColorPrimaries>, //: 8;
-    /// None means Unspecified or is an otherwise unknown value
+    /// None means Unspecified
     pub transfer_function: Option<TransferFunction>, //: 8;
     pub flags: DataFormatFlags,           //: 8;
     pub texel_block_dimensions: [u32; 4], //: 8 x 4;
