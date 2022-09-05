@@ -602,6 +602,7 @@ fn shift_and_mask_lower(shift: u32, mask: u32, value: u32) -> u32 {
 }
 
 #[test]
+#[allow(clippy::octal_escapes)]
 fn test_malformed_key_value_data_handling() {
     let data = [
         &0_u32.to_le_bytes()[..],
