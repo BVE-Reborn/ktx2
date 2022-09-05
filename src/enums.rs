@@ -1,18 +1,26 @@
-use core::{fmt, num::NonZeroU32};
+use core::{
+    fmt,
+    num::{NonZeroU32, NonZeroU8},
+};
 
 macro_rules! pseudo_enum {
-    ($(#[$attr:meta])* $name:ident { $($case:ident = $value:literal,)* }) => {
+    ($(#[$attr:meta])* $container:ident($prim:ident) $name:ident { $($case:ident = $value:literal,)* }) => {
         $(#[$attr])*
         #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-        pub struct $name(pub NonZeroU32);
+        pub struct $name($container);
+
         #[allow(non_upper_case_globals)]
         impl $name {
-            pub fn new(x: u32) -> Option<Self> {
-                Some(Self(NonZeroU32::new(x)?))
+            pub fn new(x: $prim) -> Option<Self> {
+                Some(Self($container::new(x)?))
+            }
+
+            pub fn value(&self) -> $prim {
+                self.0.get()
             }
 
             $(
-                pub const $case: Self = Self(unsafe { NonZeroU32::new_unchecked($value) });
+                pub const $case: Self = Self(unsafe { $container::new_unchecked($value) });
             )*
         }
 
@@ -33,7 +41,7 @@ macro_rules! pseudo_enum {
 
 pseudo_enum! {
     /// Known texture formats
-    Format {
+    NonZeroU32(u32) Format {
         R4G4_UNORM_PACK8 = 1,
         R4G4B4A4_UNORM_PACK16 = 2,
         B4G4R4A4_UNORM_PACK16 = 3,
@@ -192,7 +200,7 @@ pseudo_enum! {
 
 pseudo_enum! {
     /// Known supercompression schemes
-    SupercompressionScheme {
+    NonZeroU32(u32) SupercompressionScheme {
         BasisLZ = 1,
         Zstandard = 2,
         ZLIB = 3,
@@ -200,7 +208,7 @@ pseudo_enum! {
 }
 
 pseudo_enum! {
-    ColorModel {
+    NonZeroU8(u8) ColorModel {
         RGBSDA = 1,
         YUVSDA = 2,
         YIQSDA = 3,
@@ -234,7 +242,7 @@ pseudo_enum! {
 }
 
 pseudo_enum! {
-    ColorPrimaries {
+    NonZeroU8(u8) ColorPrimaries {
         BT709 = 1,
         BT601EBU = 2,
         BT601SMPTE = 3,
@@ -250,7 +258,7 @@ pseudo_enum! {
 }
 
 pseudo_enum! {
-    TransferFunction {
+    NonZeroU8(u8) TransferFunction {
         Linear = 1,
         SRGB = 2,
         ITU = 3,
