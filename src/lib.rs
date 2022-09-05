@@ -462,7 +462,8 @@ pub struct DataFormatDescriptor<'data> {
     pub data: &'data [u8],
 }
 
-pub struct BasicDataFormatDescriptor<'data> {
+#[derive(Debug, Copy, Clone)]
+pub struct BasicDataFormatDescriptorHeader {
     /// None means Unspecified
     pub color_model: Option<ColorModel>, //: 8;
     /// None means Unspecified
@@ -472,11 +473,12 @@ pub struct BasicDataFormatDescriptor<'data> {
     pub flags: DataFormatFlags,           //: 8;
     pub texel_block_dimensions: [u32; 4], //: 8 x 4;
     pub bytes_planes: [u32; 8],           //: 8 x 8;
-    sample_data: &'data [u8],
 }
 
-impl<'data> BasicDataFormatDescriptor<'data> {
-    pub fn parse(bytes: &'data [u8]) -> Result<Self, ParseError> {
+impl BasicDataFormatDescriptorHeader {
+    pub const LENGTH: usize = 16;
+
+    pub fn parse(bytes: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
         let v = bytes_to_u32(bytes, &mut offset)?;
@@ -513,12 +515,29 @@ impl<'data> BasicDataFormatDescriptor<'data> {
             flags: DataFormatFlags::from_bits_truncate(flags),
             texel_block_dimensions,
             bytes_planes,
-            sample_data: &bytes[offset..],
+        })
+    }
+}
+
+pub struct BasicDataFormatDescriptor<'data> {
+    pub header: BasicDataFormatDescriptorHeader,
+    sample_information: &'data [u8],
+}
+
+impl<'data> BasicDataFormatDescriptor<'data> {
+    pub fn parse(bytes: &'data [u8]) -> Result<Self, ParseError> {
+        let header = BasicDataFormatDescriptorHeader::parse(bytes)?;
+
+        Ok(Self {
+            header,
+            sample_information: &bytes[BasicDataFormatDescriptorHeader::LENGTH..],
         })
     }
 
     pub fn sample_information(&self) -> impl Iterator<Item = SampleInformation> + 'data {
-        SampleInformationIterator { data: self.sample_data }
+        SampleInformationIterator {
+            data: self.sample_information,
+        }
     }
 }
 

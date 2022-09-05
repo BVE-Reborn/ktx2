@@ -33,6 +33,7 @@ Per Keep a Changelog there are 6 main categories of changes:
   - `LevelIndex::uncompressed_byte_length`
   - `Level::data`
   - `Level::uncompressed_byte_length`
+- Moved header data in `BasicDataFormatDescriptor` into `BasicDataFormatDescriptorHeader`.
 
 ## v0.3.0
 
