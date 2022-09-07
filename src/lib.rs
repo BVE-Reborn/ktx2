@@ -438,7 +438,7 @@ impl DataFormatDescriptorHeader {
     pub fn as_bytes(&self, descriptor_block_size: u16) -> [u8; Self::LENGTH] {
         let mut output = [0u8; Self::LENGTH];
 
-        let first_word = self.vendor_id | (self.descriptor_type << 17);
+        let first_word = (self.vendor_id & ((1 << 17) - 1)) | (self.descriptor_type << 17);
         output[0..4].copy_from_slice(&first_word.to_le_bytes());
         output[4..6].copy_from_slice(&self.version_number.to_le_bytes());
         output[6..8].copy_from_slice(&descriptor_block_size.to_le_bytes());
