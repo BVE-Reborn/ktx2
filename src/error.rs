@@ -12,6 +12,8 @@ pub enum ParseError {
     ZeroWidth,
     /// Zero face count
     ZeroFaceCount,
+    /// Data Format Descriptor had an invalid sample bit length.
+    InvalidSampleBitLength,
     /// Unexpected end of buffer
     UnexpectedEnd,
 }
@@ -25,6 +27,7 @@ impl fmt::Display for ParseError {
             ParseError::BadMagic => f.pad("unexpected magic numbers"),
             ParseError::ZeroWidth => f.pad("zero pixel width"),
             ParseError::ZeroFaceCount => f.pad("zero face count"),
+            ParseError::InvalidSampleBitLength => f.pad("invalid sample bit length"),
             ParseError::UnexpectedEnd => f.pad("unexpected end of buffer"),
         }
     }

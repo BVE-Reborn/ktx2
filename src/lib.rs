@@ -599,7 +599,10 @@ impl SampleInformation {
 
         let v = bytes_to_u32(bytes, &mut offset)?;
         let bit_offset = shift_and_mask_lower(0, 16, v) as u16;
-        let bit_length = NonZeroU8::new((shift_and_mask_lower(16, 8, v) + 1) as u8).unwrap();
+        let bit_length = (shift_and_mask_lower(16, 8, v) as u8)
+            .checked_add(1)
+            .and_then(NonZeroU8::new)
+            .ok_or(ParseError::InvalidSampleBitLength)?;
         let channel_type = shift_and_mask_lower(24, 4, v) as u8;
         let channel_type_qualifiers = ChannelTypeQualifiers::from_bits_truncate(shift_and_mask_lower(28, 4, v) as u8);
 
@@ -661,10 +664,10 @@ mod test {
     #[test]
     fn basic_dfd_header_roundtrip() {
         let header = BasicDataFormatDescriptorHeader {
-            flags: DataFormatFlags::STRAIGHT_ALPHA,
-            transfer_function: Some(TransferFunction::ITU),
-            color_primaries: Some(ColorPrimaries::ACES),
             color_model: Some(ColorModel::LabSDA),
+            color_primaries: Some(ColorPrimaries::ACES),
+            transfer_function: Some(TransferFunction::ITU),
+            flags: DataFormatFlags::STRAIGHT_ALPHA,
             texel_block_dimensions: to_nonzero([1, 2, 3, 4]),
             bytes_planes: [5, 6, 7, 8, 9, 10, 11, 12],
         };
@@ -677,10 +680,10 @@ mod test {
     #[test]
     fn sample_information_roundtrip() {
         let info = SampleInformation {
-            channel_type_qualifiers: ChannelTypeQualifiers::LINEAR,
-            channel_type: 2,
-            bit_length: NonZeroU8::new(123).unwrap(),
             bit_offset: 234,
+            bit_length: NonZeroU8::new(123).unwrap(),
+            channel_type: 2,
+            channel_type_qualifiers: ChannelTypeQualifiers::LINEAR,
             sample_positions: [1, 2, 3, 4],
             lower: 1234,
             upper: 4567,
@@ -690,6 +693,23 @@ mod test {
         let decoded = SampleInformation::from_bytes(&bytes).unwrap();
 
         assert_eq!(info, decoded);
+    }
+
+    #[test]
+    fn sample_info_invalid_bit_length() {
+        let bytes = &[
+            0u8, 0,   // bit_offset
+            255, // bit_length
+            1,   // channel_type | channel_type_qualifiers
+            0, 0, 0, 0, // sample_positions
+            0, 0, 0, 0, // lower
+            255, 255, 255, 255, // upper
+        ];
+
+        assert!(matches!(
+            SampleInformation::from_bytes(bytes),
+            Err(ParseError::InvalidSampleBitLength)
+        ));
     }
 
     #[test]
