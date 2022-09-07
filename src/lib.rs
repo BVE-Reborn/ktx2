@@ -423,7 +423,7 @@ bitflags::bitflags! {
 pub struct DataFormatDescriptorHeader {
     pub vendor_id: u32,       //: 17;
     pub descriptor_type: u32, //: 15;
-    pub version_number: u32,  //: 16;
+    pub version_number: u16,  //: 16;
 }
 
 impl DataFormatDescriptorHeader {
@@ -440,7 +440,7 @@ impl DataFormatDescriptorHeader {
 
         let first_word = self.vendor_id | (self.descriptor_type << 17);
         output[0..4].copy_from_slice(&first_word.to_le_bytes());
-        output[4..6].copy_from_slice(&(self.version_number as u16).to_le_bytes());
+        output[4..6].copy_from_slice(&self.version_number.to_le_bytes());
         output[6..8].copy_from_slice(&descriptor_block_size.to_le_bytes());
 
         output
@@ -453,9 +453,8 @@ impl DataFormatDescriptorHeader {
         let vendor_id = shift_and_mask_lower(0, 17, v);
         let descriptor_type = shift_and_mask_lower(17, 15, v);
 
-        let v = bytes_to_u32(bytes, &mut offset)?;
-        let version_number = shift_and_mask_lower(0, 16, v);
-        let descriptor_block_size = shift_and_mask_lower(16, 16, v);
+        let version_number = read_u16(bytes, &mut offset)?;
+        let descriptor_block_size = read_u16(bytes, &mut offset)?;
 
         Ok((
             Self {
@@ -511,32 +510,9 @@ impl BasicDataFormatDescriptorHeader {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
-        let v = bytes_to_u32(bytes, &mut offset)?;
-        let model = shift_and_mask_lower(0, 8, v) as u8;
-        let primaries = shift_and_mask_lower(8, 8, v) as u8;
-        let transfer = shift_and_mask_lower(16, 8, v) as u8;
-        let flags = shift_and_mask_lower(24, 8, v) as u8;
-
-        let v = bytes_to_u32(bytes, &mut offset)?;
-        let texel_block_dimensions = [
-            (shift_and_mask_lower(0, 8, v) + 1) as u8,
-            (shift_and_mask_lower(8, 8, v) + 1) as u8,
-            (shift_and_mask_lower(16, 8, v) + 1) as u8,
-            (shift_and_mask_lower(24, 8, v) + 1) as u8,
-        ];
-
-        let v = bytes_to_u32(bytes, &mut offset)?;
-        let mut bytes_planes = [0u8; 8];
-        bytes_planes[0] = shift_and_mask_lower(0, 8, v) as u8;
-        bytes_planes[1] = shift_and_mask_lower(8, 8, v) as u8;
-        bytes_planes[2] = shift_and_mask_lower(16, 8, v) as u8;
-        bytes_planes[3] = shift_and_mask_lower(24, 8, v) as u8;
-
-        let v = bytes_to_u32(bytes, &mut offset)?;
-        bytes_planes[4] = shift_and_mask_lower(0, 8, v) as u8;
-        bytes_planes[5] = shift_and_mask_lower(8, 8, v) as u8;
-        bytes_planes[6] = shift_and_mask_lower(16, 8, v) as u8;
-        bytes_planes[7] = shift_and_mask_lower(24, 8, v) as u8;
+        let [model, primaries, transfer, flags] = read_bytes(bytes, &mut offset)?;
+        let texel_block_dimensions = read_bytes(bytes, &mut offset)?.map(|dim| dim + 1);
+        let bytes_planes = read_bytes(bytes, &mut offset)?;
 
         Ok(Self {
             color_model: ColorModel::new(model),
@@ -627,13 +603,7 @@ impl SampleInformation {
         let channel_type = shift_and_mask_lower(24, 4, v) as u8;
         let channel_type_qualifiers = ChannelTypeQualifiers::from_bits_truncate(shift_and_mask_lower(28, 4, v) as u8);
 
-        let v = bytes_to_u32(bytes, &mut offset)?;
-        let sample_positions = [
-            shift_and_mask_lower(0, 8, v) as u8,
-            shift_and_mask_lower(8, 8, v) as u8,
-            shift_and_mask_lower(16, 8, v) as u8,
-            shift_and_mask_lower(24, 8, v) as u8,
-        ];
+        let sample_positions = read_bytes(bytes, &mut offset)?;
         let lower = bytes_to_u32(bytes, &mut offset)?;
         let upper = bytes_to_u32(bytes, &mut offset)?;
 
@@ -647,6 +617,21 @@ impl SampleInformation {
             upper,
         })
     }
+}
+
+fn read_bytes<const N: usize>(bytes: &[u8], offset: &mut usize) -> Result<[u8; N], ParseError> {
+    let v = bytes
+        .get(*offset..*offset + N)
+        .ok_or(ParseError::UnexpectedEnd)?
+        .try_into()
+        .unwrap();
+    *offset += N;
+    Ok(v)
+}
+
+fn read_u16(bytes: &[u8], offset: &mut usize) -> Result<u16, ParseError> {
+    let v = u16::from_le_bytes(read_bytes(bytes, offset)?);
+    Ok(v)
 }
 
 fn bytes_to_u32(bytes: &[u8], offset: &mut usize) -> Result<u32, ParseError> {
