@@ -34,7 +34,7 @@ pub use crate::{
     error::ParseError,
 };
 
-use core::convert::TryInto;
+use core::{convert::TryInto, num::NonZeroU8};
 
 /// Decodes KTX2 texture data
 pub struct Reader<Data: AsRef<[u8]>> {
@@ -480,9 +480,9 @@ pub struct BasicDataFormatDescriptorHeader {
     pub color_primaries: Option<ColorPrimaries>, //: 8;
     /// None means Unspecified
     pub transfer_function: Option<TransferFunction>, //: 8;
-    pub flags: DataFormatFlags,          //: 8;
-    pub texel_block_dimensions: [u8; 4], //: 8 x 4;
-    pub bytes_planes: [u8; 8],           //: 8 x 8;
+    pub flags: DataFormatFlags,                 //: 8;
+    pub texel_block_dimensions: [NonZeroU8; 4], //: 8 x 4;
+    pub bytes_planes: [u8; 8],                  //: 8 x 8;
 }
 
 impl BasicDataFormatDescriptorHeader {
@@ -495,7 +495,7 @@ impl BasicDataFormatDescriptorHeader {
         let color_primaries = self.color_primaries.map(|c| c.value()).unwrap_or(0);
         let transfer_function = self.transfer_function.map(|t| t.value()).unwrap_or(0);
 
-        let texel_block_dimensions = self.texel_block_dimensions.map(|dim| dim - 1);
+        let texel_block_dimensions = self.texel_block_dimensions.map(|dim| dim.get() - 1);
 
         bytes[0] = color_model;
         bytes[1] = color_primaries;
@@ -511,7 +511,7 @@ impl BasicDataFormatDescriptorHeader {
         let mut offset = 0;
 
         let [model, primaries, transfer, flags] = read_bytes(bytes, &mut offset)?;
-        let texel_block_dimensions = read_bytes(bytes, &mut offset)?.map(|dim| dim + 1);
+        let texel_block_dimensions = read_bytes(bytes, &mut offset)?.map(|dim| NonZeroU8::new(dim + 1).unwrap());
         let bytes_planes = read_bytes(bytes, &mut offset)?;
 
         Ok(Self {
@@ -568,7 +568,7 @@ impl<'data> Iterator for SampleInformationIterator<'data> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct SampleInformation {
     pub bit_offset: u16,                                //: 16;
-    pub bit_length: u8,                                 //: 8;
+    pub bit_length: NonZeroU8,                          //: 8;
     pub channel_type: u8,                               //: 4;
     pub channel_type_qualifiers: ChannelTypeQualifiers, //: 4;
     pub sample_positions: [u8; 4],                      //: 8 x 4;
@@ -585,7 +585,7 @@ impl SampleInformation {
         let channel_info = self.channel_type | (self.channel_type_qualifiers.bits << 4);
 
         bytes[0..2].copy_from_slice(&self.bit_offset.to_le_bytes());
-        bytes[2] = self.bit_length - 1;
+        bytes[2] = self.bit_length.get() - 1;
         bytes[3] = channel_info;
         bytes[4..8].copy_from_slice(&self.sample_positions);
         bytes[8..12].copy_from_slice(&self.lower.to_le_bytes());
@@ -599,7 +599,7 @@ impl SampleInformation {
 
         let v = bytes_to_u32(bytes, &mut offset)?;
         let bit_offset = shift_and_mask_lower(0, 16, v) as u16;
-        let bit_length = (shift_and_mask_lower(16, 8, v) + 1) as u8;
+        let bit_length = NonZeroU8::new((shift_and_mask_lower(16, 8, v) + 1) as u8).unwrap();
         let channel_type = shift_and_mask_lower(24, 4, v) as u8;
         let channel_type_qualifiers = ChannelTypeQualifiers::from_bits_truncate(shift_and_mask_lower(28, 4, v) as u8);
 
@@ -654,6 +654,10 @@ fn shift_and_mask_lower(shift: u32, mask: u32, value: u32) -> u32 {
 mod test {
     use super::*;
 
+    fn to_nonzero<const N: usize>(input: [u8; N]) -> [NonZeroU8; N] {
+        input.map(|n| NonZeroU8::new(n).unwrap())
+    }
+
     #[test]
     fn basic_dfd_header_roundtrip() {
         let header = BasicDataFormatDescriptorHeader {
@@ -661,7 +665,7 @@ mod test {
             transfer_function: Some(TransferFunction::ITU),
             color_primaries: Some(ColorPrimaries::ACES),
             color_model: Some(ColorModel::LabSDA),
-            texel_block_dimensions: [1, 2, 3, 4],
+            texel_block_dimensions: to_nonzero([1, 2, 3, 4]),
             bytes_planes: [5, 6, 7, 8, 9, 10, 11, 12],
         };
 
@@ -675,7 +679,7 @@ mod test {
         let info = SampleInformation {
             channel_type_qualifiers: ChannelTypeQualifiers::LINEAR,
             channel_type: 2,
-            bit_length: 123,
+            bit_length: NonZeroU8::new(123).unwrap(),
             bit_offset: 234,
             sample_positions: [1, 2, 3, 4],
             lower: 1234,
