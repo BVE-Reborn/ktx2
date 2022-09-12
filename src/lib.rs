@@ -507,7 +507,7 @@ impl BasicDataFormatDescriptorHeader {
         bytes
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, ParseError> {
+    pub fn from_bytes(bytes: &[u8; Self::LENGTH]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
         let [model, primaries, transfer, flags] = read_bytes(bytes, &mut offset)?;
@@ -532,7 +532,11 @@ pub struct BasicDataFormatDescriptor<'data> {
 
 impl<'data> BasicDataFormatDescriptor<'data> {
     pub fn parse(bytes: &'data [u8]) -> Result<Self, ParseError> {
-        let header = BasicDataFormatDescriptorHeader::from_bytes(bytes)?;
+        if bytes.len() < BasicDataFormatDescriptorHeader::LENGTH {
+            return Err(ParseError::UnexpectedEnd);
+        }
+        let header_data = bytes[0..BasicDataFormatDescriptorHeader::LENGTH].try_into().unwrap();
+        let header = BasicDataFormatDescriptorHeader::from_bytes(header_data)?;
 
         Ok(Self {
             header,
@@ -558,7 +562,8 @@ impl<'data> Iterator for SampleInformationIterator<'data> {
         if self.data.len() < SampleInformation::LENGTH {
             return None;
         }
-        SampleInformation::from_bytes(&self.data[..SampleInformation::LENGTH]).map_or(None, |sample_information| {
+        let bytes = self.data[..SampleInformation::LENGTH].try_into().unwrap();
+        SampleInformation::from_bytes(&bytes).map_or(None, |sample_information| {
             self.data = &self.data[SampleInformation::LENGTH..];
             Some(sample_information)
         })
@@ -594,7 +599,7 @@ impl SampleInformation {
         bytes
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, ParseError> {
+    pub fn from_bytes(bytes: &[u8; Self::LENGTH]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
         let v = bytes_to_u32(bytes, &mut offset)?;
