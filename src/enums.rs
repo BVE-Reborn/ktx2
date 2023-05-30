@@ -1,4 +1,4 @@
-use crate::{BasicDataFormatDescriptorHeader, SampleInformation, ChannelTypeQualifiers, DataFormatFlags};
+use crate::{BasicDataFormatDescriptorHeader, ChannelTypeQualifiers, DataFormatFlags, SampleInformation};
 use core::{fmt, num::NonZeroU32};
 
 macro_rules! pseudo_enum {
@@ -448,7 +448,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [1, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -481,7 +481,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -532,7 +532,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -583,7 +583,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -625,7 +625,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -667,7 +667,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -718,7 +718,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -769,7 +769,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -820,7 +820,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [1, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -842,7 +842,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [1, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -864,7 +864,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [1, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -886,7 +886,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [1, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -908,7 +908,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [1, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -930,7 +930,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -963,7 +963,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -996,7 +996,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1029,7 +1029,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1062,7 +1062,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1095,7 +1095,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1137,7 +1137,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1179,7 +1179,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1221,7 +1221,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1263,7 +1263,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1305,7 +1305,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1347,7 +1347,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1389,7 +1389,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1431,7 +1431,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1473,7 +1473,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [3, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1515,7 +1515,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1566,7 +1566,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1617,7 +1617,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1668,7 +1668,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1719,7 +1719,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1770,7 +1770,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1821,7 +1821,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1872,7 +1872,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1923,7 +1923,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -1974,7 +1974,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2025,7 +2025,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2076,7 +2076,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2127,7 +2127,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2178,7 +2178,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2229,7 +2229,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2280,7 +2280,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2331,7 +2331,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2382,7 +2382,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2433,7 +2433,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -2455,7 +2455,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -2477,7 +2477,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -2499,7 +2499,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -2521,7 +2521,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -2543,7 +2543,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2576,7 +2576,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2609,7 +2609,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2642,7 +2642,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2675,7 +2675,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2708,7 +2708,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [6, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2750,7 +2750,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [6, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2792,7 +2792,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [6, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2834,7 +2834,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [6, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2876,7 +2876,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [6, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2918,7 +2918,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -2969,7 +2969,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3020,7 +3020,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3071,7 +3071,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3122,7 +3122,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3173,7 +3173,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -3195,7 +3195,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -3217,7 +3217,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -3239,7 +3239,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3272,7 +3272,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3305,7 +3305,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3338,7 +3338,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [12, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3380,7 +3380,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [12, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3422,7 +3422,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [12, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3464,7 +3464,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3515,7 +3515,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3566,7 +3566,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3617,7 +3617,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -3639,7 +3639,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -3661,7 +3661,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -3683,7 +3683,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3716,7 +3716,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3749,7 +3749,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3782,7 +3782,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [24, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3824,7 +3824,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [24, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3866,7 +3866,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [24, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3908,7 +3908,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [32, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -3959,7 +3959,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [32, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4010,7 +4010,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [32, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4061,7 +4061,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4103,7 +4103,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4172,7 +4172,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [2, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4194,7 +4194,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4216,7 +4216,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [4, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4238,7 +4238,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [1, 1, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [1, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4260,7 +4260,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4282,7 +4282,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4304,7 +4304,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4326,7 +4326,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4348,7 +4348,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4381,7 +4381,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4414,7 +4414,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4447,7 +4447,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4480,7 +4480,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4502,7 +4502,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4524,7 +4524,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4557,7 +4557,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4590,7 +4590,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4612,7 +4612,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4634,7 +4634,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4656,7 +4656,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4678,7 +4678,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4700,7 +4700,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4722,7 +4722,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4755,7 +4755,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4788,7 +4788,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4821,7 +4821,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4854,7 +4854,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4876,7 +4876,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [8, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4898,7 +4898,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4931,7 +4931,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[
                         SampleInformation {
@@ -4964,7 +4964,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -4986,7 +4986,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [4, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5008,7 +5008,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [5, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5030,7 +5030,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [5, 4, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5052,7 +5052,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [5, 5, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5074,7 +5074,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [5, 5, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5096,7 +5096,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [6, 5, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5118,7 +5118,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [6, 5, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5140,7 +5140,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [6, 6, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5162,7 +5162,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [6, 6, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5184,7 +5184,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [8, 5, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5206,7 +5206,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [8, 5, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5228,7 +5228,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [8, 6, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5250,7 +5250,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [8, 6, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5272,7 +5272,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [8, 8, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5294,7 +5294,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [8, 8, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5316,7 +5316,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [10, 5, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5338,7 +5338,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [10, 5, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5360,7 +5360,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [10, 6, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5382,7 +5382,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [10, 6, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5404,7 +5404,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [10, 8, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5426,7 +5426,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [10, 8, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5448,7 +5448,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [10, 10, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5470,7 +5470,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [10, 10, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5492,7 +5492,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [12, 10, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5514,7 +5514,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [12, 10, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5536,7 +5536,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::Linear),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [12, 12, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,
@@ -5558,7 +5558,7 @@ impl Format {
                         transfer_function: Some(TransferFunction::SRGB),
                         flags: DataFormatFlags::STRAIGHT_ALPHA,
                         texel_block_dimensions: [12, 12, 1, 1],
-                        bytes_planes: [0, 0, 0, 0, 0, 0, 0, 0],
+                        bytes_planes: [16, 0, 0, 0, 0, 0, 0, 0],
                     },
                     sample_information: &[SampleInformation {
                         bit_offset: 0,

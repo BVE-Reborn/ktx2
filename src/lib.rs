@@ -536,14 +536,18 @@ impl<'data> BasicDataFormatDescriptor<'data> {
     }
 
     pub fn sample_information(&self) -> impl Iterator<Item = SampleInformation> + 'data {
-        SampleInformationIterator {
-            data: self.sample_information,
-        }
+        SampleInformationIterator::new(self.sample_information)
     }
 }
 
-struct SampleInformationIterator<'data> {
+pub struct SampleInformationIterator<'data> {
     data: &'data [u8],
+}
+
+impl<'data> SampleInformationIterator<'data> {
+    pub fn new(data: &'data [u8]) -> Self {
+        Self { data }
+    }
 }
 
 impl<'data> Iterator for SampleInformationIterator<'data> {
