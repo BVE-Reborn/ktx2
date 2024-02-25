@@ -428,7 +428,7 @@ pub struct DataFormatDescriptorHeader {
 }
 
 impl DataFormatDescriptorHeader {
-    const LENGTH: usize = 8;
+    pub const LENGTH: usize = 8;
 
     pub const BASIC: Self = Self {
         vendor_id: 0,
@@ -436,7 +436,7 @@ impl DataFormatDescriptorHeader {
         version_number: 2,
     };
 
-    fn parse(bytes: &[u8]) -> Result<(Self, usize), ParseError> {
+    pub fn parse(bytes: &[u8]) -> Result<(Self, usize), ParseError> {
         let mut offset = 0;
 
         let v = bytes_to_u32(bytes, &mut offset)?;
@@ -520,9 +520,10 @@ impl BasicDataFormatDescriptorHeader {
     }
 }
 
+#[derive(Debug)]
 pub struct BasicDataFormatDescriptor<'data> {
     pub header: BasicDataFormatDescriptorHeader,
-    sample_information: &'data [u8],
+    pub sample_information: &'data [u8],
 }
 
 impl<'data> BasicDataFormatDescriptor<'data> {
@@ -536,14 +537,18 @@ impl<'data> BasicDataFormatDescriptor<'data> {
     }
 
     pub fn sample_information(&self) -> impl Iterator<Item = SampleInformation> + 'data {
-        SampleInformationIterator {
-            data: self.sample_information,
-        }
+        SampleInformationIterator::new(self.sample_information)
     }
 }
 
-struct SampleInformationIterator<'data> {
+pub struct SampleInformationIterator<'data> {
     data: &'data [u8],
+}
+
+impl<'data> SampleInformationIterator<'data> {
+    pub fn new(data: &'data [u8]) -> Self {
+        Self { data }
+    }
 }
 
 impl<'data> Iterator for SampleInformationIterator<'data> {
