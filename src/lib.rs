@@ -401,6 +401,7 @@ impl LevelIndex {
 }
 
 bitflags::bitflags! {
+    #[derive(Debug)]
     #[repr(transparent)]
     pub struct ChannelTypeQualifiers: u32 {
         const LINEAR        = (1 << 0);
@@ -411,7 +412,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default)]
     #[repr(transparent)]
     pub struct DataFormatFlags: u32 {
         const STRAIGHT_ALPHA             = 0;
