@@ -51,11 +51,6 @@ jobs:
           profile: minimal
           components: clippy
           default: true
-
-      - name: caching
-        uses: Swatinem/rust-cache@v1
-        with:
-          key: ${{ matrix.target }}-a # suffix for cache busting
           
       - name: check
         uses: actions-rs/cargo@v1
