@@ -256,13 +256,7 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
                 Err(_) => continue,
             };
 
-            self.data = match self.data.get(offset..) {
-                Some(data) => data,
-                // As we already have a valid key-value pair but an invalid
-                // offset (maybe the padding was missing), we want to return
-                // the key value pair but ensure that the iterator ends here.
-                None => &[],
-            };
+            self.data = self.data.get(offset..).unwrap_or_default();
 
             return Some((key, value));
         }
@@ -401,7 +395,7 @@ impl LevelIndex {
 }
 
 bitflags::bitflags! {
-    #[derive(Debug)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(transparent)]
     pub struct ChannelTypeQualifiers: u8 {
         const LINEAR        = (1 << 0);
@@ -412,7 +406,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
-    #[derive(Clone, Copy, Debug, Default)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
     #[repr(transparent)]
     pub struct DataFormatFlags: u8 {
         const STRAIGHT_ALPHA             = 0;
@@ -501,7 +495,7 @@ impl BasicDataFormatDescriptorHeader {
         bytes[0] = color_model;
         bytes[1] = color_primaries;
         bytes[2] = transfer_function;
-        bytes[3] = self.flags.bits;
+        bytes[3] = self.flags.bits();
         bytes[4..8].copy_from_slice(&texel_block_dimensions);
         bytes[8..16].copy_from_slice(&self.bytes_planes);
 
@@ -557,7 +551,7 @@ struct SampleInformationIterator<'data> {
     data: &'data [u8],
 }
 
-impl<'data> Iterator for SampleInformationIterator<'data> {
+impl Iterator for SampleInformationIterator<'_> {
     type Item = SampleInformation;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -586,7 +580,7 @@ impl SampleInformation {
     pub fn as_bytes(&self) -> [u8; Self::LENGTH] {
         let mut bytes = [0u8; Self::LENGTH];
 
-        let channel_info = self.channel_type | (self.channel_type_qualifiers.bits << 4);
+        let channel_info = self.channel_type | (self.channel_type_qualifiers.bits() << 4);
 
         bytes[0..2].copy_from_slice(&self.bit_offset.to_le_bytes());
         bytes[2] = self.bit_length.get() - 1;

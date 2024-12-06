@@ -2,7 +2,7 @@ use core::fmt;
 #[cfg(feature = "std")]
 use std::error::Error;
 
-/// Error, that happend when data doesn't satisfy expected parameters.
+/// Error, that happened when data doesn't satisfy expected parameters.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum ParseError {
