@@ -34,6 +34,7 @@ Per Keep a Changelog there are 6 main categories of changes:
   - `Level::data`
   - `Level::uncompressed_byte_length`
 - Moved header data in `BasicDataFormatDescriptor` into `BasicDataFormatDescriptorHeader`.
+- Add `ASTC_n_SFLOAT_BLOCK` variants to `Format`.
 
 ## v0.3.0
 

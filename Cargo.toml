@@ -23,7 +23,7 @@ default = ["std"]
 std = []
 
 [dependencies]
-bitflags = "1.3.2"
+bitflags = "2.4.2"
 
 [package.metadata.release]
 pre-release-hook = ["cargo", "readme", "-o", "README.md", "-t", "README.tpl"]
