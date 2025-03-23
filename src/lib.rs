@@ -1,11 +1,11 @@
-//! Parser for the [ktx2](https://github.khronos.org/KTX-Specification/) texture container format.
+//! Parser for the [ktx2](https://github.khronos.org/KTX-Specification/ktxspec.v2.html) texture container format.
 //!
 //! ## Features
 //! - [x] Async reading
 //! - [x] Parsing
 //! - [x] Validating
-//! - [x] [Data format description](https://github.khronos.org/KTX-Specification/#_data_format_descriptor)
-//! - [ ] [Key/value data](https://github.khronos.org/KTX-Specification/#_keyvalue_data)
+//! - [x] [Data format description](https://github.khronos.org/KTX-Specification/ktxspec.v2.html#_data_format_descriptor)
+//! - [ ] [Key/value data](https://github.khronos.org/KTX-Specification/ktxspec.v2.html#_keyvalue_data)
 //
 //! ## Example
 //! ```rust
