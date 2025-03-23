@@ -154,12 +154,12 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         &self.input.as_ref()[start..end]
     }
 
-    pub fn data_format_descriptors(&self) -> impl Iterator<Item = DataFormatDescriptor> {
+    pub fn dfd_blocks(&self) -> impl Iterator<Item = DfdBlock> {
         let header = self.header();
         let start = header.index.dfd_byte_offset as usize;
         // Bounds-checking previously performed in `new`
         let end = (header.index.dfd_byte_offset + header.index.dfd_byte_length) as usize;
-        DataFormatDescriptorIterator {
+        DfdBlockIterator {
             // start + 4 to skip the data format descriptors total length
             data: &self.input.as_ref()[start + 4..end],
         }
@@ -177,28 +177,25 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     }
 }
 
-struct DataFormatDescriptorIterator<'data> {
+struct DfdBlockIterator<'data> {
     data: &'data [u8],
 }
 
-impl<'data> Iterator for DataFormatDescriptorIterator<'data> {
-    type Item = DataFormatDescriptor<'data>;
+impl<'data> Iterator for DfdBlockIterator<'data> {
+    type Item = DfdBlock<'data>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.data.len() < DataFormatDescriptorHeader::LENGTH {
+        if self.data.len() < DfdHeader::LENGTH {
             return None;
         }
-        DataFormatDescriptorHeader::parse(&self.data[..DataFormatDescriptorHeader::LENGTH]).map_or(
-            None,
-            |(header, descriptor_block_size)| {
-                if descriptor_block_size == 0 || self.data.len() < descriptor_block_size {
-                    return None;
-                }
-                let data = &self.data[DataFormatDescriptorHeader::LENGTH..descriptor_block_size];
-                self.data = &self.data[descriptor_block_size..];
-                Some(DataFormatDescriptor { header, data })
-            },
-        )
+        DfdHeader::parse(&self.data[..DfdHeader::LENGTH]).map_or(None, |(header, descriptor_block_size)| {
+            if descriptor_block_size == 0 || self.data.len() < descriptor_block_size {
+                return None;
+            }
+            let data = &self.data[DfdHeader::LENGTH..descriptor_block_size];
+            self.data = &self.data[descriptor_block_size..];
+            Some(DfdBlock { header, data })
+        })
     }
 }
 
@@ -415,13 +412,13 @@ bitflags::bitflags! {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct DataFormatDescriptorHeader {
+pub struct DfdHeader {
     pub vendor_id: u32,       //: 17;
     pub descriptor_type: u32, //: 15;
     pub version_number: u16,  //: 16;
 }
 
-impl DataFormatDescriptorHeader {
+impl DfdHeader {
     pub const LENGTH: usize = 8;
 
     pub const BASIC: Self = Self {
@@ -462,13 +459,13 @@ impl DataFormatDescriptorHeader {
     }
 }
 
-pub struct DataFormatDescriptor<'data> {
-    pub header: DataFormatDescriptorHeader,
+pub struct DfdBlock<'data> {
+    pub header: DfdHeader,
     pub data: &'data [u8],
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BasicDataFormatDescriptorHeader {
+pub struct DfdBlockHeaderBasic {
     /// None means Unspecified
     pub color_model: Option<ColorModel>, //: 8;
     /// None means Unspecified
@@ -480,7 +477,7 @@ pub struct BasicDataFormatDescriptorHeader {
     pub bytes_planes: [u8; 8],                  //: 8 x 8;
 }
 
-impl BasicDataFormatDescriptorHeader {
+impl DfdBlockHeaderBasic {
     pub const LENGTH: usize = 16;
 
     pub fn as_bytes(&self) -> [u8; Self::LENGTH] {
@@ -520,23 +517,23 @@ impl BasicDataFormatDescriptorHeader {
     }
 }
 
-pub struct BasicDataFormatDescriptor<'data> {
-    pub header: BasicDataFormatDescriptorHeader,
+pub struct DfdBlockBasic<'data> {
+    pub header: DfdBlockHeaderBasic,
     sample_information: &'data [u8],
 }
 
-impl<'data> BasicDataFormatDescriptor<'data> {
+impl<'data> DfdBlockBasic<'data> {
     pub fn parse(bytes: &'data [u8]) -> Result<Self, ParseError> {
         let header_data = bytes
-            .get(0..BasicDataFormatDescriptorHeader::LENGTH)
+            .get(0..DfdBlockHeaderBasic::LENGTH)
             .ok_or(ParseError::UnexpectedEnd)?
             .try_into()
             .unwrap();
-        let header = BasicDataFormatDescriptorHeader::from_bytes(header_data)?;
+        let header = DfdBlockHeaderBasic::from_bytes(header_data)?;
 
         Ok(Self {
             header,
-            sample_information: &bytes[BasicDataFormatDescriptorHeader::LENGTH..],
+            sample_information: &bytes[DfdBlockHeaderBasic::LENGTH..],
         })
     }
 
@@ -661,7 +658,7 @@ mod test {
 
     #[test]
     fn basic_dfd_header_roundtrip() {
-        let header = BasicDataFormatDescriptorHeader {
+        let header = DfdBlockHeaderBasic {
             color_model: Some(ColorModel::LabSDA),
             color_primaries: Some(ColorPrimaries::ACES),
             transfer_function: Some(TransferFunction::ITU),
@@ -671,7 +668,7 @@ mod test {
         };
 
         let bytes = header.as_bytes();
-        let decoded = BasicDataFormatDescriptorHeader::from_bytes(&bytes).unwrap();
+        let decoded = DfdBlockHeaderBasic::from_bytes(&bytes).unwrap();
         assert_eq!(header, decoded);
     }
 

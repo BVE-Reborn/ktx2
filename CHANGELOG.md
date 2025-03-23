@@ -35,6 +35,12 @@ Per Keep a Changelog there are 6 main categories of changes:
   - `Level::uncompressed_byte_length`
 - Moved header data in `BasicDataFormatDescriptor` into `BasicDataFormatDescriptorHeader`.
 - Add `ASTC_n_SFLOAT_BLOCK` variants to `Format`.
+- Rename Data Format Descriptor types to all start with `Dfd` (by @cwfitzgerald):
+   - `Reader::data_format_descriptors` -> `Reader::dfd_blocks`
+   - `DataFormatDescriptor` -> `DfdBlock`
+   - `DataFormatDescriptorHeader` -> `DfdBlockHeader`
+   - `BasicDataFormatDescriptor` -> `DfdDescriptorBasic`
+   - `BasicDataFormatDescriptorHeader` -> `DfdBlockHeaderBasic`
 
 ## v0.3.0
 
