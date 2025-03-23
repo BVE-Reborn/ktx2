@@ -251,7 +251,7 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
             let key = &key_and_value[..key_end_index];
             let value = &key_and_value[key_end_index + 1..];
 
-            let key = match std::str::from_utf8(key) {
+            let key = match core::str::from_utf8(key) {
                 Ok(key) => key,
                 Err(_) => continue,
             };
