@@ -39,7 +39,7 @@ Per Keep a Changelog there are 6 main categories of changes:
    - `Reader::data_format_descriptors` -> `Reader::dfd_blocks`
    - `DataFormatDescriptor` -> `DfdBlock`
    - `DataFormatDescriptorHeader` -> `DfdBlockHeader`
-   - `BasicDataFormatDescriptor` -> `DfdDescriptorBasic`
+   - `BasicDataFormatDescriptor` -> `DfdBlockBasic`
    - `BasicDataFormatDescriptorHeader` -> `DfdBlockHeaderBasic`
 
 ## v0.3.0
