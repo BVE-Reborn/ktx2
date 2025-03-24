@@ -16,10 +16,15 @@ Per Keep a Changelog there are 6 main categories of changes:
 #### Table of Contents
 
 - [Unreleased](#unreleased)
+- [v0.4.0](#v040)
 - [v0.3.0](#v030)
 - [Diffs](#diffs)
 
 ## Unreleased
+
+## v0.4.0
+
+Released 2025-03-24
 
 - Added a `key_value_data` function to the reader that returns an iterator over key-value pairs (by @expenses).
 - `Reader::levels` now returns an iterator over `Level` structs, which contain the bytes of the level as well as the uncompressed length (by @expenses).
@@ -54,4 +59,5 @@ Initial release under new ownership.
 
 ## Diffs
 
-- [Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v0.3.0...HEAD)
+- [Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v0.4.0...HEAD)
+- [v0.4.0](https://github.com/BVE-Reborn/ktx2/compare/v0.3.0...v0.4.0)
