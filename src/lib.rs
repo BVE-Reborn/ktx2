@@ -5,8 +5,8 @@
 //! - [x] Parsing
 //! - [x] Validating
 //! - [x] [Data format description](https://github.khronos.org/KTX-Specification/ktxspec.v2.html#_data_format_descriptor)
-//! - [ ] [Key/value data](https://github.khronos.org/KTX-Specification/ktxspec.v2.html#_keyvalue_data)
-//
+//! - [x] [Key/value data](https://github.khronos.org/KTX-Specification/ktxspec.v2.html#_keyvalue_data)
+//!
 //! ## Example
 //! ```rust
 //! // Crate instance of reader. This validates the header
