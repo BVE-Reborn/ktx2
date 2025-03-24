@@ -1,11 +1,14 @@
 [workspace]
-members = [
-]
+members = []
 
 [package]
 name = "ktx2"
 version = "0.3.0"
-authors = ["Benjamin Saunders <ben.e.saunders@gmail.com>", "Connor Fitzgerald <connorwadefitzgerald@gmail.com>", "f3kilo <f3kilo@yandex.ru>"]
+authors = [
+    "Benjamin Saunders <ben.e.saunders@gmail.com>",
+    "Connor Fitzgerald <connorwadefitzgerald@gmail.com>",
+    "f3kilo <f3kilo@yandex.ru>",
+]
 edition = "2021"
 description = "Parser for the ktx2 texture container format"
 readme = "README.md"
@@ -13,10 +16,7 @@ repository = "https://github.com/BVE-Reborn/ktx2"
 license = "Apache-2.0"
 keywords = []
 categories = []
-exclude = [
-    "data/*",
-    
-]
+exclude = ["data/*"]
 
 [features]
 default = ["std"]
@@ -43,9 +43,11 @@ replace = "## Unreleased\n\n## v{{version}}\n\nReleased {{date}}"
 file = "CHANGELOG.md"
 search = "\\[Unreleased\\]\\(https://github.com/BVE-Reborn/ktx2/compare/v([a-z0-9.-]+)\\.\\.\\.HEAD\\)"
 replace = "[Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v{{version}}...HEAD)\n- [v{{version}}](https://github.com/BVE-Reborn/ktx2/compare/v$1...v{{version}})"
-min = 0  # allow first increment
+# allow first increment
+min = 0
 [[package.metadata.release.pre-release-replacements]]
 file = "CHANGELOG.md"
 search = "<!-- Begin Diffs -->"
 replace = "- [Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v{{version}}...HEAD)"
-min = 0  # allow non-first increment
+# allow non-first increment
+min = 0
