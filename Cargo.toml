@@ -17,6 +17,7 @@ license = "Apache-2.0"
 keywords = []
 categories = []
 exclude = ["data/*"]
+rust-version = "1.56"
 
 [features]
 default = ["std"]
