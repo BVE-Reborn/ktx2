@@ -1,6 +1,4 @@
 consolidate-commits = true
-consolidate-pushes = true
-dev-version = false
 sign-commit = true
 sign-tag = true
 shared-version = true
