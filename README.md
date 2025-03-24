@@ -27,4 +27,8 @@ let header = reader.header();
 let levels = reader.levels().collect::<Vec<_>>();
 ```
 
+### MSRV
+
+The minimum supported Rust version is 1.56. MSRV bumps are treated as breaking changes.
+
 License: Apache-2.0

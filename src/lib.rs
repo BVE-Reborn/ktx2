@@ -20,6 +20,10 @@
 //! let levels = reader.levels().collect::<Vec<_>>();
 //! # let _ = (header, levels);
 //! ```
+//!
+//! ## MSRV
+//!
+//! The minimum supported Rust version is 1.56. MSRV bumps are treated as breaking changes.
 
 #![no_std]
 
