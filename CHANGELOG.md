@@ -17,15 +17,10 @@ Per Keep a Changelog there are 6 main categories of changes:
 
 - [Unreleased](#unreleased)
 - [v0.4.0](#v040)
-- [v0.4.0](#v040)
 - [v0.3.0](#v030)
 - [Diffs](#diffs)
 
 ## Unreleased
-
-## v0.4.0
-
-Released 2025-03-24
 
 ## v0.4.0
 
@@ -65,5 +60,4 @@ Initial release under new ownership.
 ## Diffs
 
 - [Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v0.4.0...HEAD)
-- [v0.4.0](https://github.com/BVE-Reborn/ktx2/compare/v0.4.0...v0.4.0)
 - [v0.4.0](https://github.com/BVE-Reborn/ktx2/compare/v0.3.0...v0.4.0)
