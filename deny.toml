@@ -1,19 +1,12 @@
 [licenses]
-unlicensed = "deny"
-allow-osi-fsf-free = "either"
-allow = [
-]
+allow = ["MIT", "Apache-2.0"]
 
 [bans]
 multiple-versions = "deny"
-skip = [
-]
+skip = []
 
 [advisories]
-vulnerability = "deny"
-unmaintained = "deny"
-ignore = [
-]
+ignore = []
 
 [sources]
 unknown-registry = "deny"
