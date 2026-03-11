@@ -14,8 +14,8 @@ description = "Parser for the ktx2 texture container format"
 readme = "README.md"
 repository = "https://github.com/BVE-Reborn/ktx2"
 license = "Apache-2.0"
-keywords = []
-categories = []
+keywords = ["ktx2", "texture", "parser", "khronos", "gpu"]
+categories = ["parser-implementations", "graphics", "game-development"]
 exclude = ["data/*"]
 rust-version = "1.56"
 

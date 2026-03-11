@@ -11,7 +11,7 @@ env:
   RUSTFLAGS: -D warnings
   RUSTDOCFLAGS: -D warnings
   CI_RUST_VERSION: "1.85"
-  MSRV: "1.56"
+  CI_RUST_MSRV: "1.56"
 
 jobs:
   build:
@@ -48,30 +48,22 @@ jobs:
         uses: actions/checkout@v6
 
       - name: install rust
-        shell: bash
-        run: |
-          set -e
+        uses: cwfitzgerald/repo-common/.github/actions/install-rust@trunk
+        with:
+          version: ${{ env.CI_RUST_VERSION }}
+          components: clippy
+          targets: ${{ matrix.target }}
 
-          rustup toolchain install ${{ env.CI_RUST_VERSION }} --no-self-update --profile=minimal --component clippy
-          rustup override set ${{ env.CI_RUST_VERSION }}
-          rustup target add ${{ matrix.target }}
-          cargo -V
+      - name: install cargo-nextest
+        uses: taiki-e/install-action@cargo-nextest
 
       - name: clippy
         shell: bash
         run: |
           set -e
 
-          cargo clippy --target ${{ matrix.target }}
-          cargo clippy --target ${{ matrix.target }} --no-default-features
-
-      - name: test
-        shell: bash
-        if: matrix.name != 'stable wasm'
-        run: |
-          set -e
-
-          cargo test --target ${{ matrix.target }}
+          cargo clippy --target ${{ matrix.target }} --all-targets
+          cargo clippy --target ${{ matrix.target }} --all-targets --no-default-features
 
       - name: doc
         shell: bash
@@ -80,26 +72,14 @@ jobs:
 
           cargo doc --no-deps --target ${{ matrix.target }}
 
-  msrv:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout repo
-        uses: actions/checkout@v6
-
-      - name: install rust
+      - name: test
+        shell: bash
+        if: matrix.name != 'stable wasm'
         run: |
           set -e
 
-          rustup toolchain install ${{ env.MSRV }} --no-self-update --profile=minimal
-          rustup override set ${{ env.MSRV }}
-          cargo -V
-
-      - name: check msrv
-        run: |
-          set -e
-
-          cargo check
-          cargo check --no-default-features
+          cargo nextest run --target ${{ matrix.target }}
+          cargo test --doc --target ${{ matrix.target }}
 
   cargo-fmt:
     runs-on: ubuntu-latest
@@ -108,18 +88,13 @@ jobs:
         uses: actions/checkout@v6
 
       - name: install rust
-        run: |
-          set -e
-
-          rustup toolchain install ${{ env.CI_RUST_VERSION }} --no-self-update --profile=minimal --component rustfmt
-          rustup override set ${{ env.CI_RUST_VERSION }}
-          cargo -V
+        uses: cwfitzgerald/repo-common/.github/actions/install-rust@trunk
+        with:
+          version: ${{ env.CI_RUST_VERSION }}
+          components: rustfmt
 
       - name: check format
-        run: |
-          set -e
-
-          cargo fmt -- --check
+        run: cargo fmt --check
 
   cargo-deny:
     runs-on: ubuntu-latest
@@ -133,3 +108,26 @@ jobs:
           log-level: warn
           command: check
           arguments: --all-features
+
+  msrv:
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: ""
+      RUSTDOCFLAGS: ""
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v6
+
+      - name: install rust
+        uses: cwfitzgerald/repo-common/.github/actions/install-rust@trunk
+        with:
+          version: ${{ env.CI_RUST_MSRV }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: check msrv
+        run: |
+          set -e
+
+          cargo check
+          cargo check --no-default-features
