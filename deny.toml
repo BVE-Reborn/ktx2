@@ -1,13 +1,16 @@
 [licenses]
-allow = ["MIT", "Apache-2.0"]
+allow = [
+    "Apache-2.0",
+    "MIT",
+]
 
 [bans]
 multiple-versions = "deny"
 skip = []
 
-[advisories]
-ignore = []
-
 [sources]
 unknown-registry = "deny"
 unknown-git = "allow"
+
+[advisories]
+ignore = []
