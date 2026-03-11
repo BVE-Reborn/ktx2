@@ -62,8 +62,8 @@ jobs:
         run: |
           set -e
 
-          cargo clippy --target ${{ matrix.target }} --all-targets
-          cargo clippy --target ${{ matrix.target }} --all-targets --no-default-features
+          cargo clippy --target ${{ matrix.target }} --all-features
+          cargo clippy --target ${{ matrix.target }} --no-default-features
 
       - name: doc
         shell: bash
