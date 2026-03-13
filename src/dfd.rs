@@ -139,8 +139,8 @@ impl BlockHeader {
         version_number: 2,
     };
 
-    /// Serializes the block header to bytes, using the provided `descriptor_block_size` for the
-    /// size of the [`Block::data`] field.
+    /// Serializes the block header to bytes. `descriptor_block_size` is the
+    /// total size of the containing [`Block`] (header + data).
     pub fn as_bytes(&self, descriptor_block_size: u16) -> [u8; Self::LENGTH] {
         let mut output = [0u8; Self::LENGTH];
 
