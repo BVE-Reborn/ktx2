@@ -22,6 +22,20 @@ Per Keep a Changelog there are 6 main categories of changes:
 
 ## Unreleased
 
+- Moved all Data Format Descriptor (DFD) types into new submodule called `dfd` and renamed them to be more
+  understandable.
+  - `DfdBlock` -> `dfd::Block`
+  - `DfdHeader` -> `dfd::BlockHeader`
+  - `DfdBlockBasic` -> `dfd::Basic`
+  - `DfdBlockHeaderBasic` -> `dfd::BasicHeader`
+  The following types moved into the `dfd` module unchanged.
+  - `ChannelTypeQualifiers`
+  - `ColorModel`
+  - `ColorPrimaries`
+  - `DataFormatFlags`
+  - `SampleInformation`
+  - `TransferFunction`
+
 ## v0.4.0
 
 Released 2025-03-24
