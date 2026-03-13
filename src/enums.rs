@@ -41,6 +41,15 @@ macro_rules! pseudo_enum {
 
 pseudo_enum! {
     /// Known texture formats
+    ///
+    /// Intentionally omitted formats:
+    /// - (scaled) *_USCALED/*_SSCALED: prohibited by KTX2. They are intended
+    ///   for vertex data, almost no implementations support them for texturing,
+    ///   and the DFD cannot distinguish them from int values.
+    /// - (multiplanar) *_[2-9]PLANE_*: prohibited by KTX2. Multiplanar formats
+    ///   are not supported.
+    /// - (tensors) VK_ARM_tensors: basic DFDs cannot represent tensor formats,
+    ///   so while not explicitly prohibited, these are omitted.
     NonZeroU32(u32) Format {
         R4G4_UNORM_PACK8 = 1,
         R4G4B4A4_UNORM_PACK16 = 2,
@@ -52,59 +61,90 @@ pseudo_enum! {
         A1R5G5B5_UNORM_PACK16 = 8,
         R8_UNORM = 9,
         R8_SNORM = 10,
+        // R8_USCALED = 11,    -- prohibited (scaled)
+        // R8_SSCALED = 12,    -- prohibited (scaled)
         R8_UINT = 13,
         R8_SINT = 14,
         R8_SRGB = 15,
         R8G8_UNORM = 16,
         R8G8_SNORM = 17,
+        // R8G8_USCALED = 18,  -- prohibited (scaled)
+        // R8G8_SSCALED = 19,  -- prohibited (scaled)
         R8G8_UINT = 20,
         R8G8_SINT = 21,
         R8G8_SRGB = 22,
         R8G8B8_UNORM = 23,
         R8G8B8_SNORM = 24,
+        // R8G8B8_USCALED = 25,  -- prohibited (scaled)
+        // R8G8B8_SSCALED = 26,  -- prohibited (scaled)
         R8G8B8_UINT = 27,
         R8G8B8_SINT = 28,
         R8G8B8_SRGB = 29,
         B8G8R8_UNORM = 30,
         B8G8R8_SNORM = 31,
+        // B8G8R8_USCALED = 32,  -- prohibited (scaled)
+        // B8G8R8_SSCALED = 33,  -- prohibited (scaled)
         B8G8R8_UINT = 34,
         B8G8R8_SINT = 35,
         B8G8R8_SRGB = 36,
         R8G8B8A8_UNORM = 37,
         R8G8B8A8_SNORM = 38,
+        // R8G8B8A8_USCALED = 39,  -- prohibited (scaled)
+        // R8G8B8A8_SSCALED = 40,  -- prohibited (scaled)
         R8G8B8A8_UINT = 41,
         R8G8B8A8_SINT = 42,
         R8G8B8A8_SRGB = 43,
         B8G8R8A8_UNORM = 44,
         B8G8R8A8_SNORM = 45,
+        // B8G8R8A8_USCALED = 46,  -- prohibited (scaled)
+        // B8G8R8A8_SSCALED = 47,  -- prohibited (scaled)
         B8G8R8A8_UINT = 48,
         B8G8R8A8_SINT = 49,
         B8G8R8A8_SRGB = 50,
+        A8B8G8R8_UNORM_PACK32 = 51,
+        A8B8G8R8_SNORM_PACK32 = 52,
+        // A8B8G8R8_USCALED_PACK32 = 53,  -- prohibited (scaled)
+        // A8B8G8R8_SSCALED_PACK32 = 54,  -- prohibited (scaled)
+        A8B8G8R8_UINT_PACK32 = 55,
+        A8B8G8R8_SINT_PACK32 = 56,
+        A8B8G8R8_SRGB_PACK32 = 57,
         A2R10G10B10_UNORM_PACK32 = 58,
         A2R10G10B10_SNORM_PACK32 = 59,
+        // A2R10G10B10_USCALED_PACK32 = 60,  -- prohibited (scaled)
+        // A2R10G10B10_SSCALED_PACK32 = 61,  -- prohibited (scaled)
         A2R10G10B10_UINT_PACK32 = 62,
         A2R10G10B10_SINT_PACK32 = 63,
         A2B10G10R10_UNORM_PACK32 = 64,
         A2B10G10R10_SNORM_PACK32 = 65,
+        // A2B10G10R10_USCALED_PACK32 = 66,  -- prohibited (scaled)
+        // A2B10G10R10_SSCALED_PACK32 = 67,  -- prohibited (scaled)
         A2B10G10R10_UINT_PACK32 = 68,
         A2B10G10R10_SINT_PACK32 = 69,
         R16_UNORM = 70,
         R16_SNORM = 71,
+        // R16_USCALED = 72,  -- prohibited (scaled)
+        // R16_SSCALED = 73,  -- prohibited (scaled)
         R16_UINT = 74,
         R16_SINT = 75,
         R16_SFLOAT = 76,
         R16G16_UNORM = 77,
         R16G16_SNORM = 78,
+        // R16G16_USCALED = 79,  -- prohibited (scaled)
+        // R16G16_SSCALED = 80,  -- prohibited (scaled)
         R16G16_UINT = 81,
         R16G16_SINT = 82,
         R16G16_SFLOAT = 83,
         R16G16B16_UNORM = 84,
         R16G16B16_SNORM = 85,
+        // R16G16B16_USCALED = 86,  -- prohibited (scaled)
+        // R16G16B16_SSCALED = 87,  -- prohibited (scaled)
         R16G16B16_UINT = 88,
         R16G16B16_SINT = 89,
         R16G16B16_SFLOAT = 90,
         R16G16B16A16_UNORM = 91,
         R16G16B16A16_SNORM = 92,
+        // R16G16B16A16_USCALED = 93,  -- prohibited (scaled)
+        // R16G16B16A16_SSCALED = 94,  -- prohibited (scaled)
         R16G16B16A16_UINT = 95,
         R16G16B16A16_SINT = 96,
         R16G16B16A16_SFLOAT = 97,
@@ -209,6 +249,83 @@ pseudo_enum! {
         ASTC_10x10_SFLOAT_BLOCK = 1000066011,
         ASTC_12x10_SFLOAT_BLOCK = 1000066012,
         ASTC_12x12_SFLOAT_BLOCK = 1000066013,
+        PVRTC1_2BPP_UNORM_BLOCK = 1000054000,
+        PVRTC1_4BPP_UNORM_BLOCK = 1000054001,
+        PVRTC2_2BPP_UNORM_BLOCK = 1000054002,
+        PVRTC2_4BPP_UNORM_BLOCK = 1000054003,
+        PVRTC1_2BPP_SRGB_BLOCK = 1000054004,
+        PVRTC1_4BPP_SRGB_BLOCK = 1000054005,
+        PVRTC2_2BPP_SRGB_BLOCK = 1000054006,
+        PVRTC2_4BPP_SRGB_BLOCK = 1000054007,
+        G8B8G8R8_422_UNORM = 1000156000,
+        B8G8R8G8_422_UNORM = 1000156001,
+        // 10001560{02..=06}: G8 3PLANE/2PLANE 420/422/444 -- prohibited (multiplanar)
+        R10X6_UNORM_PACK16 = 1000156007,
+        R10X6G10X6_UNORM_2PACK16 = 1000156008,
+        R10X6G10X6B10X6A10X6_UNORM_4PACK16 = 1000156009,
+        G10X6B10X6G10X6R10X6_422_UNORM_4PACK16 = 1000156010,
+        B10X6G10X6R10X6G10X6_422_UNORM_4PACK16 = 1000156011,
+        // 10001560{12..=16}: G10X6 3PLANE/2PLANE 420/422/444 -- prohibited (multiplanar)
+        R12X4_UNORM_PACK16 = 1000156017,
+        R12X4G12X4_UNORM_2PACK16 = 1000156018,
+        R12X4G12X4B12X4A12X4_UNORM_4PACK16 = 1000156019,
+        G12X4B12X4G12X4R12X4_422_UNORM_4PACK16 = 1000156020,
+        B12X4G12X4R12X4G12X4_422_UNORM_4PACK16 = 1000156021,
+        // 10001560{22..=26}: G12X4 3PLANE/2PLANE 420/422/444 -- prohibited (multiplanar)
+        G16B16G16R16_422_UNORM = 1000156027,
+        B16G16R16G16_422_UNORM = 1000156028,
+        // 10001560{29..=33}: G16 3PLANE/2PLANE 420/422/444 -- prohibited (multiplanar)
+        // 10003300{00..=03}: 2PLANE_444 variants (G8, G10X6, G12X4, G16) -- prohibited (multiplanar)
+        ASTC_3x3x3_UNORM_BLOCK = 1000288000,
+        ASTC_3x3x3_SRGB_BLOCK = 1000288001,
+        ASTC_3x3x3_SFLOAT_BLOCK = 1000288002,
+        ASTC_4x3x3_UNORM_BLOCK = 1000288003,
+        ASTC_4x3x3_SRGB_BLOCK = 1000288004,
+        ASTC_4x3x3_SFLOAT_BLOCK = 1000288005,
+        ASTC_4x4x3_UNORM_BLOCK = 1000288006,
+        ASTC_4x4x3_SRGB_BLOCK = 1000288007,
+        ASTC_4x4x3_SFLOAT_BLOCK = 1000288008,
+        ASTC_4x4x4_UNORM_BLOCK = 1000288009,
+        ASTC_4x4x4_SRGB_BLOCK = 1000288010,
+        ASTC_4x4x4_SFLOAT_BLOCK = 1000288011,
+        ASTC_5x4x4_UNORM_BLOCK = 1000288012,
+        ASTC_5x4x4_SRGB_BLOCK = 1000288013,
+        ASTC_5x4x4_SFLOAT_BLOCK = 1000288014,
+        ASTC_5x5x4_UNORM_BLOCK = 1000288015,
+        ASTC_5x5x4_SRGB_BLOCK = 1000288016,
+        ASTC_5x5x4_SFLOAT_BLOCK = 1000288017,
+        ASTC_5x5x5_UNORM_BLOCK = 1000288018,
+        ASTC_5x5x5_SRGB_BLOCK = 1000288019,
+        ASTC_5x5x5_SFLOAT_BLOCK = 1000288020,
+        ASTC_6x5x5_UNORM_BLOCK = 1000288021,
+        ASTC_6x5x5_SRGB_BLOCK = 1000288022,
+        ASTC_6x5x5_SFLOAT_BLOCK = 1000288023,
+        ASTC_6x6x5_UNORM_BLOCK = 1000288024,
+        ASTC_6x6x5_SRGB_BLOCK = 1000288025,
+        ASTC_6x6x5_SFLOAT_BLOCK = 1000288026,
+        ASTC_6x6x6_UNORM_BLOCK = 1000288027,
+        ASTC_6x6x6_SRGB_BLOCK = 1000288028,
+        ASTC_6x6x6_SFLOAT_BLOCK = 1000288029,
+        A4R4G4B4_UNORM_PACK16 = 1000340000,
+        A4B4G4R4_UNORM_PACK16 = 1000340001,
+        // 10004600{00..=03}: VK_ARM_tensors -- omitted (tensors)
+        R16G16_SFIXED5 = 1000464000,
+        A1B5G5R5_UNORM_PACK16 = 1000470000,
+        A8_UNORM = 1000470001,
+        R10X6_UINT_PACK16 = 1000609000,
+        R10X6G10X6_UINT_2PACK16 = 1000609001,
+        R10X6G10X6B10X6A10X6_UINT_4PACK16 = 1000609002,
+        R12X4_UINT_PACK16 = 1000609003,
+        R12X4G12X4_UINT_2PACK16 = 1000609004,
+        R12X4G12X4B12X4A12X4_UINT_4PACK16 = 1000609005,
+        R14X2_UINT_PACK16 = 1000609006,
+        R14X2G14X2_UINT_2PACK16 = 1000609007,
+        R14X2G14X2B14X2A14X2_UINT_4PACK16 = 1000609008,
+        R14X2_UNORM_PACK16 = 1000609009,
+        R14X2G14X2_UNORM_2PACK16 = 1000609010,
+        R14X2G14X2B14X2A14X2_UNORM_4PACK16 = 1000609011,
+        // G14X2_B14X2R14X2_2PLANE_420_UNORM_3PACK16 = 1000609012,  -- prohibited (multiplanar)
+        // G14X2_B14X2R14X2_2PLANE_422_UNORM_3PACK16 = 1000609013,  -- prohibited (multiplanar)
     }
 }
 
