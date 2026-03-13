@@ -8,6 +8,15 @@
 //! and contains information like [`ColorModel`], [`ColorPrimaries`], and [`TransferFunction`] that
 //! may be useful to applications.
 //!
+//! # Structure
+//!
+//! A DFD contains one or more [`Block`]s. Each block has a [`BlockHeader`], which describes what type of block it is,
+//! and a data blob. The most common block type in KTX2 is the [`Basic`] block which contains information about
+//! texture-like data formats.
+//!
+//! This [`Basic`] block itself has a fixed size [`BasicHeader`] followed by a variable-length array of [`SampleInformation`]
+//! entries.
+//!
 //! [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html
 
 use core::num::NonZeroU8;
@@ -16,27 +25,41 @@ pub use crate::enums::{ColorModel, ColorPrimaries, TransferFunction};
 use crate::util::{bytes_to_u32, read_bytes, read_u16, shift_and_mask_lower};
 use crate::ParseError;
 
+/// DFD block, containing a header and a data blob.
+///
+/// The header describes the type of block, and the data blob contains the block's contents.
 pub struct Block<'data> {
     pub header: BlockHeader,
     pub data: &'data [u8],
 }
 
+/// DFD block header, containing what type and version of block.
+///
+/// Implementations can skip blocks with unrecognized headers, allowing unknown data to be ignored.
 #[derive(Debug, PartialEq, Eq)]
 pub struct BlockHeader {
-    pub vendor_id: u32,       //: 17;
+    /// 17-bit organization identifier. `0` is Khronos. PCI SIG IDs use bits 0–15 with bit 16
+    /// clear; other IDs are assigned by Khronos starting at 65536.
+    pub vendor_id: u32, //: 17;
+    /// 15-bit vendor-defined identifier distinguishing between data representations.
     pub descriptor_type: u32, //: 15;
-    pub version_number: u16,  //: 16;
+    /// Vendor-defined version, intended for backwards-compatible updates to a descriptor block.
+    pub version_number: u16, //: 16;
 }
 
 impl BlockHeader {
+    /// Number of bytes in a DFD block header.
     pub const LENGTH: usize = 8;
 
+    /// The header for a [`Basic`] block.
     pub const BASIC: Self = Self {
         vendor_id: 0,
         descriptor_type: 0,
         version_number: 2,
     };
 
+    /// Serializes the block header to bytes, using the provided `descriptor_block_size` for the
+    /// size of the [`Block::data`] field.
     pub fn as_bytes(&self, descriptor_block_size: u16) -> [u8; Self::LENGTH] {
         let mut output = [0u8; Self::LENGTH];
 
@@ -48,6 +71,8 @@ impl BlockHeader {
         output
     }
 
+    /// Parses a block header from the start of `bytes`, returning the header and the size
+    /// of the following [`Block::data`] field.
     pub(crate) fn parse(bytes: &[u8]) -> Result<(Self, usize), ParseError> {
         let mut offset = 0;
 
@@ -69,12 +94,16 @@ impl BlockHeader {
     }
 }
 
+/// "Basic" DFD block, containing information about texture-like data.
+///
+/// This is the most common type of DFD block found in KTX2 files.
 pub struct Basic<'data> {
     pub header: BasicHeader,
     sample_information: &'data [u8],
 }
 
 impl<'data> Basic<'data> {
+    /// Parses a [`Basic`] block from the start of `bytes`.
     pub fn parse(bytes: &'data [u8]) -> Result<Self, ParseError> {
         let header_data = bytes
             .get(0..BasicHeader::LENGTH)
@@ -89,6 +118,7 @@ impl<'data> Basic<'data> {
         })
     }
 
+    /// Iterator over the [`SampleInformation`] entries in this block.
     pub fn sample_information(&self) -> impl Iterator<Item = SampleInformation> + 'data {
         SampleInformationIterator {
             data: self.sample_information,
@@ -96,22 +126,62 @@ impl<'data> Basic<'data> {
     }
 }
 
+/// Constant size data for a [`Basic`] DFD block.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BasicHeader {
-    /// None means Unspecified
+    /// The set of color (or other data) channels which may be encoded within the data,
+    /// though there is no requirement that all of the possible channels from the colorModel
+    /// be present.
+    ///
+    /// See the [DFD specification][dfd-spec] for more information on this than you'd ever need.
+    ///
+    /// None means unknown/unspecified.
+    ///
+    /// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#COLORMODEL
     pub color_model: Option<ColorModel>, //: 8;
-    /// None means Unspecified
+    /// The color primaries used by the data.
+    ///
+    /// See the [DFD specification][dfd-spec] for more information than you can shake a stick at.
+    ///
+    /// None means unknown/unspecified.
+    ///
+    /// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#_emphasis_role_strong_emphasis_colorprimaries_emphasis_emphasis
     pub color_primaries: Option<ColorPrimaries>, //: 8;
-    /// None means Unspecified
+    /// The function converting the encoded data to a linear color space.
+    ///
+    /// See the [DFD specification][dfd-spec] for more information.
+    ///
+    /// None means unknown/unspecified.
+    ///
+    /// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#_emphasis_role_strong_emphasis_transferfunction_emphasis_emphasis
     pub transfer_function: Option<TransferFunction>, //: 8;
-    pub flags: DataFormatFlags,                 //: 8;
+    /// Boolean flags modifying properties of the data. In practice,
+    /// this is only used to indicate if the alpha channel is premultiplied.
+    ///
+    /// See the [DFD specification][dfd-spec] for more information.
+    ///
+    /// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#_emphasis_role_strong_emphasis_flags_emphasis_emphasis
+    pub flags: DataFormatFlags, //: 8;
+    /// The dimensions of each "block" of texels in the image. For uncompressed formats, this is always 1x1x1x1.
+    /// For compressed formats, this represents the dimensions of the compression block (e.g. 4x4x1x1 for BCn formats).
+    ///
+    /// The dfd stores this as one less than the actual dimension. See the [DFD specification][dfd-spec] for more information.
+    ///
+    /// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#_emphasis_role_strong_emphasis_texelblockdimension_0_3_emphasis_emphasis
     pub texel_block_dimensions: [NonZeroU8; 4], //: 8 x 4;
-    pub bytes_planes: [u8; 8],                  //: 8 x 8;
+    /// The number of bytes in each plane of the data.
+    ///
+    /// See the [DFD specification][dfd-spec] for more information.
+    ///
+    /// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#_emphasis_role_strong_emphasis_bytesplane_0_7_emphasis_emphasis
+    pub bytes_planes: [u8; 8], //: 8 x 8;
 }
 
 impl BasicHeader {
+    /// Number of bytes in a BasicHeader.
     pub const LENGTH: usize = 16;
 
+    /// Serializes the block header to bytes.
     pub fn as_bytes(&self) -> [u8; Self::LENGTH] {
         let mut bytes = [0u8; Self::LENGTH];
 
@@ -131,6 +201,7 @@ impl BasicHeader {
         bytes
     }
 
+    /// Deserializes a block header from the given bytes.
     pub fn from_bytes(bytes: &[u8; Self::LENGTH]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
@@ -165,20 +236,70 @@ impl Iterator for SampleInformationIterator<'_> {
     }
 }
 
+/// Information about each "sample" within an image.
+///
+/// A "sample" consisting of a single channel of data and with a
+/// single corresponding "position" within the texel block.
+///
+/// See the [DFD specification][dfd-spec] for more extremely verbose information.
+///
+/// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#_anchor_id_sample_xreflabel_sample_sample_information
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct SampleInformation {
-    pub bit_offset: u16,                                //: 16;
-    pub bit_length: NonZeroU8,                          //: 8;
-    pub channel_type: u8,                               //: 4;
+    /// Offset from the beginning of the texel block in bits.
+    pub bit_offset: u16, //: 16;
+    /// The length of this sample in bits.
+    pub bit_length: NonZeroU8, //: 8;
+    /// The type of channel this sample represents. This varies by [`ColorModel`].
+    pub channel_type: u8, //: 4;
+    /// Qualifiers modifying the channel type.
     pub channel_type_qualifiers: ChannelTypeQualifiers, //: 4;
-    pub sample_positions: [u8; 4],                      //: 8 x 4;
-    pub lower: u32,                                     //: 32;
-    pub upper: u32,                                     //: 32;
+    /// The position in texels of this sample relative to the 0,0,0,0 texel in the 4D texel block.
+    pub sample_positions: [u8; 4], //: 8 x 4;
+    /// The sample value that maps to the format's logical minimum — typically `0` for unsigned
+    /// formats, `-1` for signed formats, or `-0.5` for chroma channels in color difference models
+    /// (e.g. Y′CbCr).
+    ///
+    /// Together with [`upper`](Self::upper), this defines how raw sample values are converted to
+    /// their conceptual numeric interpretation. Values are not guaranteed to fall within this
+    /// range — for example, HDR formats may define `1.0` as a nominal level well below the actual
+    /// maximum. When samples should be interpreted directly as integers (unnormalized), set
+    /// [`upper`](Self::upper) to `1` and `lower` to `0` (unsigned) or `-1` (signed).
+    ///
+    /// For integer formats, this is stored as a 32-bit integer (signed or unsigned matching the
+    /// channel encoding). For floating-point formats, it is stored as a 32-bit float. For formats
+    /// wider than 32 bits (e.g. 64-bit), integer values are expanded by preserving the sign bit
+    /// and replicating the top non-sign bit, and float values are converted to the native
+    /// representation (e.g. `f32` to `f64`).
+    ///
+    /// # Examples
+    ///
+    /// | Format | `lower` | `upper` | Effect |
+    /// |--------|---------|---------|--------|
+    /// | R8 unorm | `0` | `255` | Maps 0–255 to 0.0–1.0 |
+    /// | R8 snorm | `-127` (`0xFFFFFF81`) | `127` | Maps -127–127 to -1.0–1.0 |
+    /// | R8 uint | `0` | `1` | Integer value used directly |
+    /// | R16 sfloat | `0xBF800000` (-1.0f) | `0x3F800000` (1.0f) | Float range -1.0–1.0 |
+    /// | R64 uint | `0` | `1` | Expands to 64-bit `0` and `1` |
+    /// | R64 uint norm | `0` | `0xFFFFFFFF` | Expands to `u64::MAX`, maps to 0.0–1.0 |
+    /// | BT.709 Y′ (8-bit) | `16` | `235` | Maps 16–235 to 0.0–1.0 |
+    ///
+    /// For a very long and confusing explanation of this, please see the [DFD specification][dfd-spec]
+    ///
+    /// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#_emphasis_role_strong_emphasis_samplelower_emphasis_emphasis_and_emphasis_role_strong_emphasis_sampleupper_emphasis_emphasis
+    pub lower: u32, //: 32;
+    /// The sample value that maps to `1.0` (the white point), or `0.5` for chroma channels in
+    /// color difference models (e.g. Y′CbCr).
+    ///
+    /// See [`lower`](Self::lower) for more details on interpretation and encoding and examples.
+    pub upper: u32, //: 32;
 }
 
 impl SampleInformation {
+    /// Number of bytes in a SampleInformation entry.
     pub const LENGTH: usize = 16;
 
+    /// Serializes this sample information to bytes.
     pub fn as_bytes(&self) -> [u8; Self::LENGTH] {
         let mut bytes = [0u8; Self::LENGTH];
 
@@ -194,6 +315,7 @@ impl SampleInformation {
         bytes
     }
 
+    /// Deserializes sample information from the given bytes.
     pub fn from_bytes(bytes: &[u8; Self::LENGTH]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
@@ -223,21 +345,61 @@ impl SampleInformation {
 }
 
 bitflags::bitflags! {
+    /// Qualifiers modifying the channel type of a [`SampleInformation`] entry.
+    ///
+    /// Multiple samples with the same channel and position are combined into a single logical
+    /// ("virtual") sample. Samples without [`EXPONENT`](Self::EXPONENT) set contribute to the
+    /// **base value** — the primary numeric content of the channel (e.g. a color intensity or
+    /// mantissa). Samples with [`EXPONENT`](Self::EXPONENT) set act as **modifiers** that
+    /// transform the base value — the interpretation depends on the combination of flags:
+    ///
+    /// | `EXPONENT` | `LINEAR` | `FLOAT` | Interpretation |
+    /// |:----------:|:--------:|:-------:|----------------|
+    /// | - | - | - | Base value, modified by [`TransferFunction`] |
+    /// | - | L | - | Base value, always linear (ignores [`TransferFunction`]) |
+    /// | - | - | F | Base value is a standard float (10/11/16/32/64-bit) |
+    /// | E | - | - | Exponent: `base × 2^modifier` |
+    /// | E | - | F | Multiplier: `base × modifier` |
+    /// | E | L | - | Divisor: `base / modifier` |
+    /// | E | L | F | Power: `base ^ modifier` |
+    ///
+    /// For a long and more confusing explanation of this, see the [DFD specification][dfd-spec].
+    ///
+    /// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#_sample_emphasis_role_strong_emphasis_channeltype_emphasis_emphasis_emphasis_role_strong_emphasis_channelid_emphasis_emphasis_and_qualifiers
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[repr(transparent)]
     pub struct ChannelTypeQualifiers: u8 {
+        /// The sample contains a linearly-encoded value, bypassing the format's
+        /// [`TransferFunction`]. When combined with [`EXPONENT`](Self::EXPONENT), indicates a
+        /// divisor modifier instead.
         const LINEAR        = (1 << 0);
+        /// The sample is a modifier applied to the base value rather than part of the base value
+        /// itself. The type of modification depends on the [`LINEAR`](Self::LINEAR) and
+        /// [`FLOAT`](Self::FLOAT) flags — see the table on [`ChannelTypeQualifiers`].
         const EXPONENT      = (1 << 1);
+        /// The sample holds a signed two's complement value. When not set, the sample is unsigned.
         const SIGNED        = (1 << 2);
+        /// The sample holds floating-point data (10/11/16/32/64-bit IEEE 754). For custom float
+        /// formats with a separate [`EXPONENT`](Self::EXPONENT) sample, this flag on the base
+        /// value instead indicates an implicit leading `1` bit in the mantissa.
+        /// When combined with [`EXPONENT`](Self::EXPONENT), indicates a multiplier modifier.
         const FLOAT         = (1 << 3);
     }
 }
 
 bitflags::bitflags! {
+    /// Flags modifying the interpretation of color data in a [`Basic`] block.
+    ///
+    /// Controls whether color values have been pre-scaled by the alpha channel. Has no effect
+    /// if the format does not contain an alpha channel.
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
     #[repr(transparent)]
     pub struct DataFormatFlags: u8 {
+        /// Color values are not premultiplied — they need to be scaled by alpha during blending.
+        ///
+        /// Not a flag itself, but an alias for when ALPHA_PREMULTIPLIED is not set.
         const STRAIGHT_ALPHA             = 0;
+        /// Color values have already been scaled by the alpha channel.
         const ALPHA_PREMULTIPLIED        = (1 << 0);
     }
 }
