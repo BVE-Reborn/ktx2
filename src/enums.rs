@@ -4,7 +4,7 @@ use core::{
 };
 
 macro_rules! pseudo_enum {
-    ($(#[$attr:meta])* $container:ident($prim:ident) $name:ident { $($case:ident = $value:literal,)* }) => {
+    ($(#[$attr:meta])* $container:ident($prim:ident) $name:ident { $($(#[$variant_attr:meta])* $case:ident = $value:literal,)* }) => {
         $(#[$attr])*
         #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
         pub struct $name($container);
@@ -20,6 +20,7 @@ macro_rules! pseudo_enum {
             }
 
             $(
+                $(#[$variant_attr])*
                 pub const $case: Self = Self(unsafe { $container::new_unchecked($value) });
             )*
         }
@@ -40,7 +41,15 @@ macro_rules! pseudo_enum {
 }
 
 pseudo_enum! {
-    /// Known texture formats
+    /// Vulkan `VkFormat` values for the texture's texel format.
+    ///
+    /// Wraps a non-zero `u32`. A value of `0` (`VK_FORMAT_UNDEFINED`) is
+    /// represented as `None` at the [`Header`](crate::Header) level, used
+    /// for Basis Universal and other supercompressed universal formats
+    /// where the actual GPU format is chosen at transcode time.
+    ///
+    /// Unknown non-zero format values are preserved — use [`value()`](Self::value)
+    /// to get the raw `u32` for passing to Vulkan.
     ///
     /// Intentionally omitted formats:
     /// - (scaled) *_USCALED/*_SSCALED: prohibited by KTX2. They are intended
@@ -330,15 +339,30 @@ pseudo_enum! {
 }
 
 pseudo_enum! {
-    /// Known supercompression schemes
+    /// Supercompression applied to mip level data.
+    ///
+    /// `None` (raw value `0`) at the [`Header`](crate::Header) level means
+    /// no supercompression — level data is ready to use directly.
+    ///
+    /// Vendor-specific schemes use IDs `>= 0x10000`.
     NonZeroU32(u32) SupercompressionScheme {
+        /// Basis Universal LZ. Level data must be transcoded, not just
+        /// decompressed. Global data section contains codebooks.
+        /// [`Level::uncompressed_byte_length`](crate::Level::uncompressed_byte_length)
+        /// will be `0`.
         BasisLZ = 1,
+        /// Zstandard (zstd). Decompress each level independently.
         Zstandard = 2,
+        /// ZLIB (deflate). Decompress each level independently.
         ZLIB = 3,
     }
 }
 
 pseudo_enum! {
+    /// Color model from the Khronos Data Format specification.
+    ///
+    /// `None` (raw value `0`) means unspecified. Values 128+ are
+    /// compressed-format models (BC, ETC, ASTC, etc.).
     NonZeroU8(u8) ColorModel {
         RGBSDA = 1,
         YUVSDA = 2,
@@ -373,6 +397,10 @@ pseudo_enum! {
 }
 
 pseudo_enum! {
+    /// Color primaries from the Khronos Data Format specification.
+    ///
+    /// `None` (raw value `0`) means unspecified. [`BT709`](Self::BT709) is
+    /// the most common value (sRGB / Rec. 709).
     NonZeroU8(u8) ColorPrimaries {
         BT709 = 1,
         BT601EBU = 2,
@@ -389,6 +417,10 @@ pseudo_enum! {
 }
 
 pseudo_enum! {
+    /// Transfer function (OETF/EOTF) from the Khronos Data Format specification.
+    ///
+    /// `None` (raw value `0`) means unspecified. [`SRGB`](Self::SRGB) and
+    /// [`Linear`](Self::Linear) are the most common values for game textures.
     NonZeroU8(u8) TransferFunction {
         Linear = 1,
         SRGB = 2,

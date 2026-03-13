@@ -45,7 +45,13 @@ pub use crate::{
 use alloc::vec::Vec;
 use core::convert::TryInto;
 
-/// Decodes KTX2 texture data
+/// Parses and validates a KTX2 texture container from an in-memory buffer.
+///
+/// All validation (magic bytes, bounds checks, DFD integrity, level index) is
+/// performed eagerly in [`Reader::new`]. Subsequent accessors are infallible.
+///
+/// `Data` can be any type that derefs to `[u8]` — `&[u8]`, `Vec<u8>`,
+/// `Arc<[u8]>`, etc.
 pub struct Reader<Data: AsRef<[u8]>> {
     input: Data,
     header: Header,
@@ -53,7 +59,10 @@ pub struct Reader<Data: AsRef<[u8]>> {
 }
 
 impl<Data: AsRef<[u8]>> Reader<Data> {
-    /// Decode KTX2 data from `input`
+    /// Parse and validate a KTX2 buffer.
+    ///
+    /// Validates the header magic, all section bounds, the DFD, and the level
+    /// index. Returns [`ParseError`] on any structural problem.
     pub fn new(input: Data) -> Result<Self, ParseError> {
         let header_data = input
             .as_ref()
@@ -125,7 +134,8 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         Ok(result)
     }
 
-    /// Parses the Data Format Descriptor section into `self.dfd_blocks`.
+    /// Eagerly parses all DFD blocks from the DFD section into `self.dfd_blocks`.
+    /// Fails if the section contains a partial or malformed block.
     fn parse_dfd(&mut self) -> ParseResult<()> {
         let dfd_start = self.header.index.dfd_byte_offset as usize;
         let dfd_end = (self.header.index.dfd_byte_offset + self.header.index.dfd_byte_length) as usize;
@@ -145,7 +155,8 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         Ok(())
     }
 
-    /// Parses the level index table immediately following the header.
+    /// Parses the level index table that immediately follows the 80-byte header.
+    /// Each entry is 24 bytes. Used internally; prefer [`levels`](Self::levels) for data access.
     fn level_index(&self) -> ParseResult<impl ExactSizeIterator<Item = LevelIndex> + '_> {
         let level_count = self.header().level_count.max(1) as usize;
 
@@ -167,17 +178,19 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         }))
     }
 
-    /// Access underlying raw bytes
+    /// The raw KTX2 file bytes backing this reader.
     pub fn data(&self) -> &[u8] {
         self.input.as_ref()
     }
 
-    /// Container-level metadata
+    /// Container-level metadata (dimensions, format, compression, etc.).
     pub fn header(&self) -> Header {
         self.header
     }
 
-    /// Iterator over the texture's mip levels
+    /// Iterator over the texture's mip levels, ordered largest to smallest
+    /// (level 0 first, level *N-1* last). Each [`Level`] contains the raw
+    /// (possibly supercompressed) bytes for that level.
     pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
         self.level_index().unwrap().map(move |level| Level {
             // Bounds-checking previously performed in `new`
@@ -186,6 +199,9 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         })
     }
 
+    /// Supercompression Global Data (SGD) section. Currently only used by
+    /// BasisLZ (scheme 1) for codebooks and image descriptors. Empty for
+    /// other schemes.
     pub fn supercompression_global_data(&self) -> &[u8] {
         let header = self.header();
         let start = header.index.sgd_byte_offset as usize;
@@ -194,12 +210,22 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         &self.input.as_ref()[start..end]
     }
 
-    /// Iterator over the DFD blocks in the file.
+    /// The Data Format Descriptor blocks. Most KTX2 files contain exactly
+    /// one [`dfd::Block::Basic`] block. Use this to inspect color model,
+    /// transfer function, primaries, and per-sample layout.
     pub fn dfd_blocks(&self) -> &[dfd::Block] {
         &self.dfd_blocks
     }
 
-    /// Iterator over the key-value pairs
+    /// Iterator over key/value metadata pairs. Keys are UTF-8 strings;
+    /// values are raw bytes (often NUL-terminated UTF-8, but not always).
+    ///
+    /// # Standard Keys
+    ///
+    /// The KTX specification defines a number of standard keys. Most commonly,
+    /// the `KTXwriter` key is used to indicate the tool that wrote the file.
+    ///
+    /// For a full list of standard keys, see the [KTX specification](https://github.khronos.org/KTX-Specification/ktxspec.v2.html#_keyvalue_data).
     pub fn key_value_data(&self) -> KeyValueDataIterator {
         let header = self.header();
 
@@ -211,16 +237,21 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     }
 }
 
-/// An iterator that parses the key-value pairs in the KTX2 file.
+/// Iterator over KTX2 key/value metadata pairs.
+///
+/// Each item is `(key, value)` where `key` is a UTF-8 string and `value` is
+/// raw bytes (often UTF-8, but not guaranteed). Malformed entries are silently
+/// skipped. Prefer [`Reader::key_value_data`] over constructing this directly.
 pub struct KeyValueDataIterator<'data> {
     data: &'data [u8],
 }
 
 impl<'data> KeyValueDataIterator<'data> {
-    /// Create a new iterator from the key-value data section of the KTX2 file.
+    /// Create a new iterator from the raw key/value data section bytes.
     ///
-    /// From the start of the file, this is a slice between [`Index::kvd_byte_offset`]
-    /// and [`Index::kvd_byte_offset`] + [`Index::kvd_byte_length`].
+    /// The slice should span from [`Index::kvd_byte_offset`] to
+    /// `kvd_byte_offset + kvd_byte_length` relative to the start of the file.
+    /// Prefer [`Reader::key_value_data`] which handles this for you.
     pub fn new(data: &'data [u8]) -> Self {
         Self { data }
     }
@@ -272,43 +303,82 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
     }
 }
 
-/// Identifier, expected in start of input texture data.
-const KTX2_MAGIC: [u8; 12] = [0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A];
+/// 12-byte file identifier: `«KTX 20»\r\n\x1A\n`. Must appear at offset 0.
+pub const MAGIC: [u8; 12] = [0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A];
 
 /// Result of parsing data operation.
 type ParseResult<T> = Result<T, ParseError>;
 
-/// Container-level metadata
+/// Container-level metadata (dimensions, format, layout) from the 80-byte KTX2 file header.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Header {
+    /// Vulkan `VkFormat` enum value. `None` means `VK_FORMAT_UNDEFINED`,
+    /// used for supercompressed universal formats (e.g. Basis Universal)
+    /// where the actual format is determined at transcode time.
     pub format: Option<Format>,
+    /// Size in bytes of the data type used for GPU upload, for endian conversion
+    /// on big-endian systems (all image data in KTX2 is little-endian).
+    ///
+    /// Must be `1` when `format` is `None` (VK_FORMAT_UNDEFINED) or for
+    /// block-compressed formats (`_BLOCK` suffix). For packed formats
+    /// (`_PACKxx`), equals the byte size of the packed unit `xx / 8`
+    /// (e.g. `4` for `_PACK32`). For unpacked formats, equals the byte size
+    /// of a single component (e.g. `2` for `R16G16B16_UNORM`). For combined
+    /// depth/stencil: `2` for `D16_UNORM_S8_UINT`, `4` for all others.
     pub type_size: u32,
+    /// Texture width in texels. Always non-zero.
     pub pixel_width: u32,
+    /// Texture height in texels. `0` for 1D textures.
     pub pixel_height: u32,
+    /// Texture depth in texels. `0` for non-3D textures.
     pub pixel_depth: u32,
+    /// Number of array layers. `0` means a non-array texture (1 implicit
+    /// layer). Use `layer_count.max(1)` when allocating storage.
     pub layer_count: u32,
+    /// Number of cubemap faces. `6` for cubemaps, `1` otherwise.
     pub face_count: u32,
+    /// Number of mip levels. `0` means the full mip chain should be
+    /// generated from level 0 by the application if needed.
+    /// Use `level_count.max(1)` when iterating stored levels.
     pub level_count: u32,
+    /// Compression applied to mip level data. `None` means uncompressed.
+    /// When set, each [`Level::data`] must be decompressed before use.
     pub supercompression_scheme: Option<SupercompressionScheme>,
+    /// Raw byte offsets/lengths for the DFD, KVD, and SGD sections.
+    /// For most use cases, prefer [`Reader::dfd_blocks`],
+    /// [`Reader::key_value_data`], and
+    /// [`Reader::supercompression_global_data`] instead.
     pub index: Index,
 }
 
-/// An index giving the byte offsets from the start of the file and byte sizes of the various sections of the KTX2 file.
+/// Byte offsets and lengths (from start of file) for the DFD, KVD, and SGD sections.
+///
+/// You typically don't need these directly — use [`Reader::dfd_blocks`],
+/// [`Reader::key_value_data`], and [`Reader::supercompression_global_data`] instead.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Index {
+    /// Byte offset of the Data Format Descriptor section.
     pub dfd_byte_offset: u32,
+    /// Byte length of the Data Format Descriptor section.
     pub dfd_byte_length: u32,
+    /// Byte offset of the Key/Value Data section.
     pub kvd_byte_offset: u32,
+    /// Byte length of the Key/Value Data section. `0` if absent.
     pub kvd_byte_length: u32,
+    /// Byte offset of the Supercompression Global Data section.
     pub sgd_byte_offset: u64,
+    /// Byte length of the Supercompression Global Data section. `0` if absent.
     pub sgd_byte_length: u64,
 }
 
 impl Header {
+    /// Size of the KTX2 header in bytes (12-byte magic + 68-byte fields).
     pub const LENGTH: usize = 80;
 
+    /// Decode a header from exactly 80 bytes. Validates the magic bytes and
+    /// rejects zero `pixel_width` or zero `face_count`.
     pub fn from_bytes(data: &[u8; Self::LENGTH]) -> ParseResult<Self> {
-        if !data.starts_with(&KTX2_MAGIC) {
+        if !data.starts_with(&MAGIC) {
             return Err(ParseError::BadMagic);
         }
 
@@ -342,13 +412,14 @@ impl Header {
         Ok(header)
     }
 
+    /// Serialize this header back to 80 bytes (including magic).
     pub fn as_bytes(&self) -> [u8; Self::LENGTH] {
         let mut bytes = [0; Self::LENGTH];
 
         let format = self.format.map(|format| format.value()).unwrap_or(0);
         let supercompression_scheme = self.supercompression_scheme.map(|scheme| scheme.value()).unwrap_or(0);
 
-        bytes[0..12].copy_from_slice(&KTX2_MAGIC);
+        bytes[0..12].copy_from_slice(&MAGIC);
         bytes[12..16].copy_from_slice(&format.to_le_bytes()[..]);
         bytes[16..20].copy_from_slice(&self.type_size.to_le_bytes()[..]);
         bytes[20..24].copy_from_slice(&self.pixel_width.to_le_bytes()[..]);
@@ -369,21 +440,42 @@ impl Header {
     }
 }
 
+/// A single mip level's data, returned by [`Reader::levels`].
+///
+/// If [`Header::supercompression_scheme`] is `Some`, `data` is still
+/// compressed — decompress it (e.g. via zstd/zlib) before interpreting
+/// the texels according to [`Header::format`].
 pub struct Level<'a> {
+    /// Raw (possibly supercompressed) bytes for this mip level.
+    ///
+    /// After decompression, the data is laid out as:
+    /// `layer → face → z-slice → row → texel/block`, where layers come
+    /// from `layer_count` (1 if 0), faces from `face_count` (6 for
+    /// cubemaps), and z-slices from `pixel_depth` (for 3D textures).
     pub data: &'a [u8],
+    /// Size of `data` after decompression. Equals `data.len()` when no
+    /// supercompression is applied. `0` for BasisLZ (transcode instead).
     pub uncompressed_byte_length: u64,
 }
 
+/// Offsets dictating the location of a [`Level`] within a file.
+///
+/// This is mainly useful for writing or low-level manipulation. Prefer [`Reader::levels`] for data access.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct LevelIndex {
+    /// Byte offset from the start of the file to this level's data.
     pub byte_offset: u64,
+    /// Byte length of the (possibly supercompressed) level data.
     pub byte_length: u64,
+    /// Byte length after decompression. `0` for BasisLZ.
     pub uncompressed_byte_length: u64,
 }
 
 impl LevelIndex {
+    /// Size of one level index entry in bytes.
     pub const LENGTH: usize = 24;
 
+    /// Decode a level index entry from 24 little-endian bytes.
     pub fn from_bytes(data: &[u8; Self::LENGTH]) -> Self {
         Self {
             byte_offset: u64::from_le_bytes(data[0..8].try_into().unwrap()),
@@ -392,6 +484,7 @@ impl LevelIndex {
         }
     }
 
+    /// Serialize this entry back to 24 little-endian bytes.
     pub fn as_bytes(&self) -> [u8; Self::LENGTH] {
         let mut bytes = [0; Self::LENGTH];
 
