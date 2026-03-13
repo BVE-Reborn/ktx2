@@ -33,6 +33,7 @@ extern crate std;
 pub mod dfd;
 mod enums;
 mod error;
+mod util;
 
 pub use crate::{
     enums::{Format, SupercompressionScheme},
@@ -229,7 +230,7 @@ impl<'data> Iterator for KeyValueDataIterator<'data> {
         let mut offset = 0;
 
         loop {
-            let length = bytes_to_u32(self.data, &mut offset).ok()?;
+            let length = util::bytes_to_u32(self.data, &mut offset).ok()?;
 
             let start_offset = offset;
 
@@ -397,37 +398,6 @@ impl LevelIndex {
 
         bytes
     }
-}
-
-fn read_bytes<const N: usize>(bytes: &[u8], offset: &mut usize) -> Result<[u8; N], ParseError> {
-    let v = bytes
-        .get(*offset..*offset + N)
-        .ok_or(ParseError::UnexpectedEnd)?
-        .try_into()
-        .unwrap();
-    *offset += N;
-    Ok(v)
-}
-
-fn read_u16(bytes: &[u8], offset: &mut usize) -> Result<u16, ParseError> {
-    let v = u16::from_le_bytes(read_bytes(bytes, offset)?);
-    Ok(v)
-}
-
-fn bytes_to_u32(bytes: &[u8], offset: &mut usize) -> Result<u32, ParseError> {
-    let v = u32::from_le_bytes(
-        bytes
-            .get(*offset..*offset + 4)
-            .ok_or(ParseError::UnexpectedEnd)?
-            .try_into()
-            .unwrap(),
-    );
-    *offset += 4;
-    Ok(v)
-}
-
-fn shift_and_mask_lower(shift: u32, mask: u32, value: u32) -> u32 {
-    (value >> shift) & ((1 << mask) - 1)
 }
 
 #[cfg(test)]

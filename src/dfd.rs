@@ -13,7 +13,8 @@
 use core::num::NonZeroU8;
 
 pub use crate::enums::{ColorModel, ColorPrimaries, TransferFunction};
-use crate::{bytes_to_u32, read_bytes, read_u16, shift_and_mask_lower, ParseError};
+use crate::util::{bytes_to_u32, read_bytes, read_u16, shift_and_mask_lower};
+use crate::ParseError;
 
 pub struct Block<'data> {
     pub header: BlockHeader,
