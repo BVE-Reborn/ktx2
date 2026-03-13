@@ -27,6 +27,8 @@
 
 #![no_std]
 
+extern crate alloc;
+
 #[cfg(feature = "std")]
 extern crate std;
 
@@ -40,21 +42,25 @@ pub use crate::{
     error::ParseError,
 };
 
+use alloc::vec::Vec;
 use core::convert::TryInto;
 
 /// Decodes KTX2 texture data
 pub struct Reader<Data: AsRef<[u8]>> {
     input: Data,
     header: Header,
+    dfd_blocks: Vec<dfd::Block>,
 }
 
 impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Decode KTX2 data from `input`
     pub fn new(input: Data) -> Result<Self, ParseError> {
-        if input.as_ref().len() < Header::LENGTH {
-            return Err(ParseError::UnexpectedEnd);
-        }
-        let header_data = input.as_ref()[0..Header::LENGTH].try_into().unwrap();
+        let header_data = input
+            .as_ref()
+            .get(0..Header::LENGTH)
+            .ok_or(ParseError::UnexpectedEnd)?
+            .try_into()
+            .unwrap();
         let header = Header::from_bytes(header_data)?;
 
         // Check DFD bounds
@@ -94,8 +100,15 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
             return Err(ParseError::UnexpectedEnd);
         }
 
-        let result = Self { input, header };
-        let index = result.level_index()?; // Check index integrity
+        let mut result = Self {
+            input,
+            header,
+            // 1 is the most likely length, as 99.99% of KTX2 files have exactly 1 DFD block.
+            dfd_blocks: Vec::with_capacity(1),
+        };
+        result.parse_dfd()?;
+        // Creating the iterator validates the integrity of the level index.
+        let index = result.level_index()?;
 
         // Check level data bounds
         for level in index {
@@ -112,6 +125,27 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         Ok(result)
     }
 
+    /// Parses the Data Format Descriptor section into `self.dfd_blocks`.
+    fn parse_dfd(&mut self) -> ParseResult<()> {
+        let dfd_start = self.header.index.dfd_byte_offset as usize;
+        let dfd_end = (self.header.index.dfd_byte_offset + self.header.index.dfd_byte_length) as usize;
+        // Skip the 4-byte DFD total length field
+        let mut data = &self.input.as_ref()[dfd_start + 4..dfd_end];
+
+        // If we ever encounter a partial DFD, we want to throw an error,
+        // not silently ignore the rest of the DFD data. We should end up consuming
+        // all of the DFD data. If we end up with unconsumed DFD data, we let
+        // dfd::Block::parse throw an error.
+        while !data.is_empty() {
+            let (block, consumed) = dfd::Block::parse(data)?;
+            self.dfd_blocks.push(block);
+            data = &data[consumed..];
+        }
+
+        Ok(())
+    }
+
+    /// Parses the level index table immediately following the header.
     fn level_index(&self) -> ParseResult<impl ExactSizeIterator<Item = LevelIndex> + '_> {
         let level_count = self.header().level_count.max(1) as usize;
 
@@ -160,15 +194,9 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         &self.input.as_ref()[start..end]
     }
 
-    pub fn dfd_blocks(&self) -> impl Iterator<Item = dfd::Block> {
-        let header = self.header();
-        let start = header.index.dfd_byte_offset as usize;
-        // Bounds-checking previously performed in `new`
-        let end = (header.index.dfd_byte_offset + header.index.dfd_byte_length) as usize;
-        DfdBlockIterator {
-            // start + 4 to skip the data format descriptors total length
-            data: &self.input.as_ref()[start + 4..end],
-        }
+    /// Iterator over the DFD blocks in the file.
+    pub fn dfd_blocks(&self) -> &[dfd::Block] {
+        &self.dfd_blocks
     }
 
     /// Iterator over the key-value pairs
@@ -180,31 +208,6 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         let end = (header.index.kvd_byte_offset + header.index.kvd_byte_length) as usize;
 
         KeyValueDataIterator::new(&self.input.as_ref()[start..end])
-    }
-}
-
-pub(crate) struct DfdBlockIterator<'data> {
-    data: &'data [u8],
-}
-
-impl<'data> Iterator for DfdBlockIterator<'data> {
-    type Item = dfd::Block<'data>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.data.len() < dfd::BlockHeader::LENGTH {
-            return None;
-        }
-        dfd::BlockHeader::parse(&self.data[..dfd::BlockHeader::LENGTH]).map_or(
-            None,
-            |(header, descriptor_block_size)| {
-                if descriptor_block_size == 0 || self.data.len() < descriptor_block_size {
-                    return None;
-                }
-                let data = &self.data[dfd::BlockHeader::LENGTH..descriptor_block_size];
-                self.data = &self.data[descriptor_block_size..];
-                Some(dfd::Block { header, data })
-            },
-        )
     }
 }
 

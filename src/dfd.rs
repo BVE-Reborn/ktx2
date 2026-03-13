@@ -14,11 +14,9 @@
 //! and a data blob. The most common block type in KTX2 is the [`Basic`] block which contains information about
 //! texture-like data formats.
 //!
-//! This [`Basic`] block itself has a fixed size [`BasicHeader`] followed by a variable-length array of [`SampleInformation`]
-//! entries.
-//!
 //! [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html
 
+use alloc::{vec, vec::Vec};
 use core::num::NonZeroU8;
 
 pub use crate::enums::{ColorModel, ColorPrimaries, TransferFunction};
@@ -28,15 +26,98 @@ use crate::ParseError;
 /// DFD block, containing a header and a data blob.
 ///
 /// The header describes the type of block, and the data blob contains the block's contents.
-pub struct Block<'data> {
-    pub header: BlockHeader,
-    pub data: &'data [u8],
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Block {
+    /// "Basic" DFD block. This is what most KTX2 files contain.
+    Basic(Basic),
+    /// DFD block type unknown to the ktx2 crate. Use the header
+    /// to determine if this is a relevant block type for your application.
+    Unknown { header: BlockHeader, data: Vec<u8> },
+}
+
+impl Block {
+    /// Parses a single [`Block`] from the start of `bytes`, returning the block and the number
+    /// of bytes consumed.
+    pub(crate) fn parse(bytes: &[u8]) -> Result<(Self, usize), ParseError> {
+        let (header, descriptor_block_size) = BlockHeader::from_bytes(
+            &bytes
+                .get(..BlockHeader::LENGTH)
+                .ok_or(ParseError::UnexpectedEnd)?
+                .try_into()
+                .unwrap(),
+        )?;
+
+        if descriptor_block_size == 0 {
+            return Err(ParseError::UnexpectedEnd);
+        }
+
+        let data = &bytes
+            .get(BlockHeader::LENGTH..descriptor_block_size)
+            .ok_or(ParseError::UnexpectedEnd)?;
+
+        let block = match header {
+            BlockHeader::BASIC => Block::Basic(Basic::parse(data)?),
+            _ => Block::Unknown {
+                header,
+                data: data.to_vec(),
+            },
+        };
+
+        Ok((block, descriptor_block_size))
+    }
+
+    /// Number of bytes the serialized form of this block will take up,
+    /// including the [`BlockHeader`].
+    pub fn serialized_length(&self) -> usize {
+        let data_length = match self {
+            Block::Basic(basic) => basic.serialized_length(),
+            Block::Unknown { data, .. } => data.len(),
+        };
+        BlockHeader::LENGTH + data_length
+    }
+
+    /// Serializes this block to a given slice of bytes. The slice must be at least
+    /// [`serialized_length`](Self::serialized_length) bytes long.
+    pub fn to_bytes(&self, output: &mut [u8]) {
+        assert!(
+            output.len() >= self.serialized_length(),
+            "Output buffer is too small to serialize Block: expected at least {} bytes, got {}",
+            self.serialized_length(),
+            output.len()
+        );
+
+        let descriptor_block_size = self.serialized_length() as u16;
+
+        // Serialize the header
+        let header = match self {
+            Block::Basic(_) => BlockHeader::BASIC,
+            Block::Unknown { header, .. } => *header,
+        };
+        output[..BlockHeader::LENGTH].copy_from_slice(&header.as_bytes(descriptor_block_size));
+
+        // Serialize the data
+        match self {
+            Block::Basic(basic) => {
+                basic.to_bytes(&mut output[BlockHeader::LENGTH..]);
+            }
+            Block::Unknown { data, .. } => {
+                output[BlockHeader::LENGTH..][..data.len()].copy_from_slice(data);
+            }
+        }
+    }
+
+    /// Serializes this block to a vector of bytes.
+    pub fn to_vec(&self) -> Vec<u8> {
+        let mut output = vec![0u8; self.serialized_length()];
+        self.to_bytes(&mut output);
+        output
+    }
 }
 
 /// DFD block header, containing what type and version of block.
 ///
 /// Implementations can skip blocks with unrecognized headers, allowing unknown data to be ignored.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BlockHeader {
     /// 17-bit organization identifier. `0` is Khronos. PCI SIG IDs use bits 0–15 with bit 16
     /// clear; other IDs are assigned by Khronos starting at 65536.
@@ -71,9 +152,9 @@ impl BlockHeader {
         output
     }
 
-    /// Parses a block header from the start of `bytes`, returning the header and the size
-    /// of the following [`Block::data`] field.
-    pub(crate) fn parse(bytes: &[u8]) -> Result<(Self, usize), ParseError> {
+    /// Deserializes a block header from bytes, returning the header and the size
+    /// of the containing [`Block`] (header + data).
+    pub(crate) fn from_bytes(bytes: &[u8; Self::LENGTH]) -> Result<(Self, usize), ParseError> {
         let mut offset = 0;
 
         let v = bytes_to_u32(bytes, &mut offset)?;
@@ -97,38 +178,8 @@ impl BlockHeader {
 /// "Basic" DFD block, containing information about texture-like data.
 ///
 /// This is the most common type of DFD block found in KTX2 files.
-pub struct Basic<'data> {
-    pub header: BasicHeader,
-    sample_information: &'data [u8],
-}
-
-impl<'data> Basic<'data> {
-    /// Parses a [`Basic`] block from the start of `bytes`.
-    pub fn parse(bytes: &'data [u8]) -> Result<Self, ParseError> {
-        let header_data = bytes
-            .get(0..BasicHeader::LENGTH)
-            .ok_or(ParseError::UnexpectedEnd)?
-            .try_into()
-            .unwrap();
-        let header = BasicHeader::from_bytes(header_data)?;
-
-        Ok(Self {
-            header,
-            sample_information: &bytes[BasicHeader::LENGTH..],
-        })
-    }
-
-    /// Iterator over the [`SampleInformation`] entries in this block.
-    pub fn sample_information(&self) -> impl Iterator<Item = SampleInformation> + 'data {
-        SampleInformationIterator {
-            data: self.sample_information,
-        }
-    }
-}
-
-/// Constant size data for a [`Basic`] DFD block.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BasicHeader {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Basic {
     /// The set of color (or other data) channels which may be encoded within the data,
     /// though there is no requirement that all of the possible channels from the colorModel
     /// be present.
@@ -175,39 +226,33 @@ pub struct BasicHeader {
     ///
     /// [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html#_emphasis_role_strong_emphasis_bytesplane_0_7_emphasis_emphasis
     pub bytes_planes: [u8; 8], //: 8 x 8;
+    /// Information about each "sample" within the data, describing how to interpret their bits of the data as color or other information.
+    pub sample_information: Vec<SampleInformation>,
 }
 
-impl BasicHeader {
-    /// Number of bytes in a BasicHeader.
-    pub const LENGTH: usize = 16;
+impl Basic {
+    /// Number of bytes in the constant-size prefix of a Basic block, before the variable-length sample information.
+    pub const FIXED_LENGTH: usize = 16;
 
-    /// Serializes the block header to bytes.
-    pub fn as_bytes(&self) -> [u8; Self::LENGTH] {
-        let mut bytes = [0u8; Self::LENGTH];
-
-        let color_model = self.color_model.map(|c| c.value()).unwrap_or(0);
-        let color_primaries = self.color_primaries.map(|c| c.value()).unwrap_or(0);
-        let transfer_function = self.transfer_function.map(|t| t.value()).unwrap_or(0);
-
-        let texel_block_dimensions = self.texel_block_dimensions.map(|dim| dim.get() - 1);
-
-        bytes[0] = color_model;
-        bytes[1] = color_primaries;
-        bytes[2] = transfer_function;
-        bytes[3] = self.flags.bits();
-        bytes[4..8].copy_from_slice(&texel_block_dimensions);
-        bytes[8..16].copy_from_slice(&self.bytes_planes);
-
-        bytes
-    }
-
-    /// Deserializes a block header from the given bytes.
-    pub fn from_bytes(bytes: &[u8; Self::LENGTH]) -> Result<Self, ParseError> {
+    /// Parses a [`Basic`] block from the start of `bytes`.
+    pub fn parse(bytes: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
         let [model, primaries, transfer, flags] = read_bytes(bytes, &mut offset)?;
         let texel_block_dimensions = read_bytes(bytes, &mut offset)?.map(|dim| NonZeroU8::new(dim + 1).unwrap());
         let bytes_planes = read_bytes(bytes, &mut offset)?;
+
+        let remaining_bytes = &bytes[Self::FIXED_LENGTH..];
+        // TODO: If MSRV is bumped to 1.88, use as_chunks::<SampleInformation::LENGTH>().
+        let iterator = remaining_bytes.chunks_exact(SampleInformation::LENGTH);
+
+        if !iterator.remainder().is_empty() {
+            return Err(ParseError::UnexpectedEnd);
+        }
+
+        let sample_information = iterator
+            .map(|chunk| SampleInformation::from_bytes(chunk.try_into().unwrap()))
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Self {
             color_model: ColorModel::new(model),
@@ -216,23 +261,47 @@ impl BasicHeader {
             flags: DataFormatFlags::from_bits_truncate(flags),
             texel_block_dimensions,
             bytes_planes,
+            sample_information,
         })
     }
-}
 
-struct SampleInformationIterator<'data> {
-    data: &'data [u8],
-}
+    /// Number of bytes the serialized form of this block will take up.
+    pub fn serialized_length(&self) -> usize {
+        Self::FIXED_LENGTH + self.sample_information.len() * SampleInformation::LENGTH
+    }
 
-impl Iterator for SampleInformationIterator<'_> {
-    type Item = SampleInformation;
+    /// Serializes this block to a given slice of bytes. The slice must be at least [`serialized_length`](Self::serialized_length) bytes long.
+    pub fn to_bytes(&self, output: &mut [u8]) {
+        assert!(
+            output.len() >= self.serialized_length(),
+            "Output buffer is too small to serialize Basic block: expected at least {} bytes, got {}",
+            self.serialized_length(),
+            output.len()
+        );
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let bytes = self.data.get(0..SampleInformation::LENGTH)?.try_into().unwrap();
-        SampleInformation::from_bytes(&bytes).map_or(None, |sample_information| {
-            self.data = &self.data[SampleInformation::LENGTH..];
-            Some(sample_information)
-        })
+        let color_model = self.color_model.map_or(0, |c| c.value());
+        let color_primaries = self.color_primaries.map_or(0, |c| c.value());
+        let transfer_function = self.transfer_function.map_or(0, |t| t.value());
+
+        let texel_block_dimensions = self.texel_block_dimensions.map(|dim| dim.get() - 1);
+
+        output[0] = color_model;
+        output[1] = color_primaries;
+        output[2] = transfer_function;
+        output[3] = self.flags.bits();
+        output[4..8].copy_from_slice(&texel_block_dimensions);
+        output[8..16].copy_from_slice(&self.bytes_planes);
+        for (i, sample) in self.sample_information.iter().enumerate() {
+            let start = Self::FIXED_LENGTH + i * SampleInformation::LENGTH;
+            output[start..][..SampleInformation::LENGTH].copy_from_slice(&sample.as_bytes());
+        }
+    }
+
+    /// Serializes this block to a vector of bytes.
+    pub fn to_vec(&self) -> Vec<u8> {
+        let mut output = vec![0u8; self.serialized_length()];
+        self.to_bytes(&mut output);
+        output
     }
 }
 
@@ -414,18 +483,19 @@ mod tests {
 
     #[test]
     fn basic_dfd_header_roundtrip() {
-        let header = BasicHeader {
+        let basic = Basic {
             color_model: Some(ColorModel::LabSDA),
             color_primaries: Some(ColorPrimaries::ACES),
             transfer_function: Some(TransferFunction::ITU),
             flags: DataFormatFlags::STRAIGHT_ALPHA,
             texel_block_dimensions: to_nonzero([1, 2, 3, 4]),
             bytes_planes: [5, 6, 7, 8, 9, 10, 11, 12],
+            sample_information: vec![],
         };
 
-        let bytes = header.as_bytes();
-        let decoded = BasicHeader::from_bytes(&bytes).unwrap();
-        assert_eq!(header, decoded);
+        let bytes = basic.to_vec();
+        let decoded = Basic::parse(&bytes).unwrap();
+        assert_eq!(basic, decoded);
     }
 
     #[test]

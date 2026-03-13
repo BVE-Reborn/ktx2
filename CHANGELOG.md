@@ -35,6 +35,10 @@ Per Keep a Changelog there are 6 main categories of changes:
   - `DataFormatFlags`
   - `SampleInformation`
   - `TransferFunction`
+- Added `dfd::Block` serialization: `serialized_length()`, `to_bytes()`, `to_vec()`, `parse()`
+- `dfd::Block` is now an owned enum (`Basic(Basic)` | `Unknown { header, data }`) instead of a borrowed struct
+- `dfd::BasicHeader` merged into `dfd::Basic`, which now owns its `sample_information: Vec<SampleInformation>` instead of providing a lazy iterator. `dfd::BasicHeader::LENGTH` is now `dfd::Basic::FIXED_LENGTH`
+- `Reader::dfd_blocks()` returns `&[dfd::Block]` instead of `impl Iterator<Item = dfd::Block<'_>>`
 
 ## v0.4.0
 
