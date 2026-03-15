@@ -1,0 +1,38 @@
+name: Install KTX-Software
+description: Install KTX-Software CLI tools from GitHub releases
+
+inputs:
+  version:
+    description: Version of KTX-Software to install
+    required: false
+    default: "4.4.2"
+
+runs:
+  using: composite
+  steps:
+    - name: Install KTX-Software (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        curl -sL -o ktx-software.deb "https://github.com/KhronosGroup/KTX-Software/releases/download/v${{ inputs.version }}/KTX-Software-${{ inputs.version }}-Linux-x86_64.deb"
+        sudo apt-get install -y ./ktx-software.deb
+
+    - name: Install KTX-Software (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        if [ "$(uname -m)" = "arm64" ]; then
+          ARCH="arm64"
+        else
+          ARCH="x86_64"
+        fi
+        curl -sL -o ktx-software.pkg "https://github.com/KhronosGroup/KTX-Software/releases/download/v${{ inputs.version }}/KTX-Software-${{ inputs.version }}-Darwin-${ARCH}.pkg"
+        sudo installer -pkg ktx-software.pkg -target /
+
+    - name: Install KTX-Software (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        curl -sL -o ktx-setup.exe "https://github.com/KhronosGroup/KTX-Software/releases/download/v${{ inputs.version }}/KTX-Software-${{ inputs.version }}-Windows-x64.exe"
+        ./ktx-setup.exe //S
+        echo "C:/Program Files/KTX-Software/bin" >> "$GITHUB_PATH"

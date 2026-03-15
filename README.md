@@ -26,6 +26,10 @@ let header = reader.header();
 let levels = reader.levels().collect::<Vec<_>>();
 ```
 
+### Testing
+
+Running tests requires the `ktx` CLI from [KTX-Software](https://github.com/KhronosGroup/KTX-Software) to be installed and available on your `PATH`.
+
 ### MSRV
 
 The minimum supported Rust version is 1.56. MSRV bumps are treated as breaking changes.

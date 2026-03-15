@@ -57,6 +57,10 @@ jobs:
       - name: install cargo-nextest
         uses: taiki-e/install-action@cargo-nextest
 
+      - name: install ktx-software
+        if: matrix.name != 'stable wasm'
+        uses: ./.github/actions/install-ktx-software
+
       - name: clippy
         shell: bash
         run: |
