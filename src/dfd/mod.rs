@@ -16,12 +16,15 @@
 //!
 //! [dfd-spec]: https://registry.khronos.org/DataFormat/specs/1.4/dataformat.1.4.inline.html
 
+mod generate;
+
+pub use generate::BuildError;
+
 use alloc::{vec, vec::Vec};
 use core::num::NonZeroU8;
 
-pub use crate::enums::{ColorModel, ColorPrimaries, TransferFunction};
 use crate::util::{bytes_to_u32, read_bytes, read_u16, shift_and_mask_lower};
-use crate::ParseError;
+use crate::{ColorModel, ColorPrimaries, ParseError, TransferFunction};
 
 /// DFD block, containing a header and a data blob.
 ///
@@ -233,6 +236,124 @@ pub struct Basic {
 impl Basic {
     /// Number of bytes in the constant-size prefix of a Basic block, before the variable-length sample information.
     pub const FIXED_LENGTH: usize = 16;
+
+    /// Creates a [`Basic`] DFD block for the given [`Format`](crate::Format),
+    /// using the format's default transfer function, color primaries, color
+    /// model, and straight (non-premultiplied) alpha.
+    ///
+    /// Returns the DFD block and the [`crate::Header::type_size`] that corresponds
+    /// to the provided format.
+    ///
+    /// This is a convenience wrapper around [`from_format_with`](Self::from_format_with)
+    /// that uses the standard defaults for every parameter. If you need to
+    /// customize any of these, use `from_format_with` instead.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BuildError::UnsupportedFormat`] if the format is not
+    /// recognized by the DFD generation table.
+    pub fn from_format(format: crate::Format) -> Result<(Self, u32), BuildError> {
+        Self::from_format_with(format, false, None, None, None)
+    }
+
+    /// Creates a [`Basic`] DFD block for the given [`Format`](crate::Format),
+    /// with optional overrides for transfer function, color primaries, color
+    /// model, and alpha premultiplication.
+    ///
+    /// Returns the DFD block and the [`crate::Header::type_size`] that corresponds
+    /// to the provided format and overrides.
+    ///
+    /// Parameters set to `None` use the format's natural defaults:
+    ///
+    /// - `alpha_premultiplied` — when `true`, sets the
+    ///   [`ALPHA_PREMULTIPLIED`](DataFormatFlags::ALPHA_PREMULTIPLIED) flag,
+    ///   indicating that color channel values have already been scaled by the
+    ///   alpha channel. When `false` (the default), alpha is straight
+    ///   (non-premultiplied).
+    ///
+    /// - `transfer_function` — overrides how encoded sample values are
+    ///   converted to linear light. The default depends on the format: sRGB
+    ///   format variants (e.g.
+    ///   [`R8G8B8A8_SRGB`](crate::Format::R8G8B8A8_SRGB)) default to
+    ///   [`TransferFunction::SRGB`]; all others default to
+    ///   [`TransferFunction::Linear`]. When you override the default
+    ///   transfer function, unlike with `srgb`-variant formats, the
+    ///   "alpha" channel is not automatically marked as linear by DFD generation,
+    ///   due to an ambiguity in the specification. See [this issue][ktx-spec-231].
+    ///   However, conventionally, the alpha channel of these formats is still expected to be linear.
+    ///
+    /// - `color_primaries` — overrides the color primaries of the data.
+    ///   Defaults to [`ColorPrimaries::BT709`] (the sRGB/Rec. 709 primaries
+    ///   used by most consumer content).
+    ///
+    /// - `color_model` — overrides the color model. Defaults to
+    ///   [`ColorModel::RGBSDA`] for most formats, [`ColorModel::YUVSDA`] for
+    ///   4:2:2 subsampled formats, or the intrinsic model for compressed
+    ///   formats. If this is changed from the default for the format,
+    ///   the dfd will be formally invalid, but this may be useful for
+    ///   some applications.
+    ///
+    /// # Format-specific restrictions
+    ///
+    /// Not all overrides are valid for all formats. The following restrictions
+    /// are enforced and will return an error if violated:
+    ///
+    /// ## Depth-stencil formats (e.g. [`D16_UNORM_S8_UINT`](crate::Format::D16_UNORM_S8_UINT), [`D32_SFLOAT_S8_UINT`](crate::Format::D32_SFLOAT_S8_UINT))
+    ///
+    /// Depth-stencil formats have a fixed DFD layout. No overrides are
+    /// permitted: `alpha_premultiplied` must be `false`, and
+    /// `transfer_function`, `color_primaries`, and `color_model` must all be
+    /// `None`.
+    ///
+    /// ## Compressed formats (e.g. [`BC7_UNORM_BLOCK`](crate::Format::BC7_UNORM_BLOCK), [`ASTC_4x4_SRGB_BLOCK`](crate::Format::ASTC_4x4_SRGB_BLOCK))
+    ///
+    /// Compressed formats must use their intrinsic color model (e.g.
+    /// [`ColorModel::BC7`], [`ColorModel::ASTC`]). The `color_model` parameter
+    /// must be `None`.
+    ///
+    /// ## sRGB variant rules
+    ///
+    /// Formats that exist in both UNORM and SRGB variants (e.g.
+    /// [`R8G8B8A8_UNORM`](crate::Format::R8G8B8A8_UNORM) /
+    /// [`R8G8B8A8_SRGB`](crate::Format::R8G8B8A8_SRGB),
+    /// [`ASTC_4x4_UNORM_BLOCK`](crate::Format::ASTC_4x4_UNORM_BLOCK) /
+    /// [`ASTC_4x4_SRGB_BLOCK`](crate::Format::ASTC_4x4_SRGB_BLOCK)) have
+    /// strict transfer function requirements:
+    ///
+    /// - UNORM variant (e.g.
+    ///   [`R8G8B8A8_UNORM`](crate::Format::R8G8B8A8_UNORM)): the transfer
+    ///   function must **not** be set to [`TransferFunction::SRGB`]. If you
+    ///   want sRGB encoding, use the SRGB variant of the format instead.
+    ///
+    /// - SRGB variant (e.g.
+    ///   [`R8G8B8A8_SRGB`](crate::Format::R8G8B8A8_SRGB)): the transfer
+    ///   function **must** be [`TransferFunction::SRGB`] (or `None` to use
+    ///   the default). Overriding it to any other value is an error.
+    ///
+    /// Formats without an sRGB counterpart (e.g.
+    /// [`R16_UNORM`](crate::Format::R16_UNORM),
+    /// [`R32_SFLOAT`](crate::Format::R32_SFLOAT),
+    /// [`ASTC_4x4_SFLOAT_BLOCK`](crate::Format::ASTC_4x4_SFLOAT_BLOCK))
+    /// have no transfer function restrictions.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`BuildError`] describing which constraint was
+    /// violated. See the variant documentation for details.
+    ///
+    /// [ktx-spec-231]: https://github.com/KhronosGroup/KTX-Specification/issues/231
+    pub fn from_format_with(
+        format: crate::Format,
+        alpha_premultiplied: bool,
+        transfer_function: Option<TransferFunction>,
+        color_primaries: Option<ColorPrimaries>,
+        color_model: Option<ColorModel>,
+    ) -> Result<(Self, u32), BuildError> {
+        let builder = generate::Builder::from_format(format).ok_or(BuildError::UnsupportedFormat)?;
+        let type_size = builder.type_size();
+        let dfd = builder.build(alpha_premultiplied, transfer_function, color_primaries, color_model)?;
+        Ok((dfd, type_size))
+    }
 
     /// Parses a [`Basic`] block from the start of `bytes`.
     pub fn parse(bytes: &[u8]) -> Result<Self, ParseError> {

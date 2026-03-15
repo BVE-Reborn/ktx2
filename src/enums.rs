@@ -23,6 +23,8 @@ macro_rules! pseudo_enum {
                 $(#[$variant_attr])*
                 pub const $case: Self = Self(unsafe { $container::new_unchecked($value) });
             )*
+
+            pub const ALL: &'static [Self] = &[$(Self::$case),*];
         }
 
         impl fmt::Debug for $name {
@@ -59,6 +61,9 @@ pseudo_enum! {
     ///   are not supported.
     /// - (tensors) VK_ARM_tensors: basic DFDs cannot represent tensor formats,
     ///   so while not explicitly prohibited, these are omitted.
+    ///
+    /// NOTE: If variants are added or removed, update the match in
+    /// `dfd/generate.rs` as well.
     NonZeroU32(u32) Format {
         R4G4_UNORM_PACK8 = 1,
         R4G4B4A4_UNORM_PACK16 = 2,

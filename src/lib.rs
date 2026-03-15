@@ -38,7 +38,7 @@ mod error;
 mod util;
 
 pub use crate::{
-    enums::{Format, SupercompressionScheme},
+    enums::{ColorModel, ColorPrimaries, Format, SupercompressionScheme, TransferFunction},
     error::ParseError,
 };
 
@@ -191,14 +191,14 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// The color primaries used by this image (e.g. BT.709, BT.2020, etc.).
     ///
     /// Shorthand for [`dfd::Basic::color_primaries`]. Returns `None` if there is no basic DFD block.
-    pub fn color_primaries(&self) -> Option<dfd::ColorPrimaries> {
+    pub fn color_primaries(&self) -> Option<ColorPrimaries> {
         self.basic_dfd()?.color_primaries
     }
 
     /// The transfer function used by this image (e.g. Linear, sRGB, PQ, etc.).
     ///
     /// Shorthand for [`dfd::Basic::transfer_function`]. Returns `None` if there is no basic DFD block.
-    pub fn transfer_function(&self) -> Option<dfd::TransferFunction> {
+    pub fn transfer_function(&self) -> Option<TransferFunction> {
         self.basic_dfd()?.transfer_function
     }
 
@@ -207,7 +207,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// rather than RGB, even if the uncompressed data would be RGB.
     ///
     /// Shorthand for [`dfd::Basic::color_model`]. Returns `None` if there is no basic DFD block.
-    pub fn color_model(&self) -> Option<dfd::ColorModel> {
+    pub fn color_model(&self) -> Option<ColorModel> {
         self.basic_dfd()?.color_model
     }
 
