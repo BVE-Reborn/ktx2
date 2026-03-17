@@ -1,23 +1,6 @@
 use ktx2::dfd::Block;
-use ktx2::{ColorModel, ColorPrimaries, Format, Header, Index, LevelIndex, TransferFunction};
+use ktx2::{ColorModel, ColorPrimaries, Format, Header, Index, TransferFunction, Writer};
 use std::process::Command;
-
-fn lcm(a: u32, b: u32) -> u32 {
-    a / gcd(a, b) * b
-}
-
-fn gcd(mut a: u32, mut b: u32) -> u32 {
-    while b != 0 {
-        let t = b;
-        b = a % b;
-        a = t;
-    }
-    a
-}
-
-fn align_up(value: usize, alignment: usize) -> usize {
-    (value + alignment - 1) / alignment * alignment
-}
 
 /// Check if the `ktx` CLI tool is available on the system.
 fn ktx_available() -> bool {
@@ -45,7 +28,7 @@ fn build_ktx2(
     )
     .ok()?;
 
-    let bytes_per_block = basic.bytes_planes[0] as u32;
+    let bytes_per_block = basic.bytes_planes[0] as usize;
     let block_w = basic.texel_block_dimensions[0].get() as u32;
     let block_h = basic.texel_block_dimensions[1].get() as u32;
     let block_d = basic.texel_block_dimensions[2].get() as u32;
@@ -54,59 +37,49 @@ fn build_ktx2(
     let pixel_height = block_h;
     let pixel_depth = if block_d > 1 { block_d } else { 0 };
 
-    // DFD section
-    let dfd_block = Block::Basic(basic);
-    let dfd_block_bytes = dfd_block.to_vec();
-    let dfd_total_size = 4 + dfd_block_bytes.len();
+    let level_data = vec![0u8; bytes_per_block];
 
-    // Layout offsets
-    let level_index_offset = Header::LENGTH; // 80
-    let dfd_offset = level_index_offset + LevelIndex::LENGTH; // 80 + 24 = 104
-    let after_dfd = dfd_offset + dfd_total_size;
-    let alignment = lcm(bytes_per_block, 4) as usize;
-    let level_data_offset = align_up(after_dfd, alignment);
-    let level_data_size = bytes_per_block as usize; // 1 block
+    if color_model.is_some() {
+        // Custom color model requires format: None with custom DFD blocks
+        let header = Header {
+            format: None,
+            // Filled in by `build()` from DFD generation.
+            type_size: 0,
+            pixel_width,
+            pixel_height,
+            pixel_depth,
+            layer_count: 0,
+            face_count: 1,
+            level_count: 0,
+            supercompression_scheme: None,
+            index: Index::default(),
+        };
+        Writer::new(header)
+            .add_level(level_data)
+            .custom_dfd_blocks(vec![Block::Basic(basic)], type_size)
+            .build()
+            .ok()
+    } else {
+        let mut writer = if pixel_depth > 0 {
+            Writer::new_3d(format, pixel_width, pixel_height, pixel_depth)
+        } else {
+            Writer::new_2d(format, pixel_width, pixel_height)
+        };
 
-    let file_size = level_data_offset + level_data_size;
-    let mut buf = vec![0u8; file_size];
+        writer = writer.add_level(level_data);
 
-    // Write header
-    let header = Header {
-        format: if color_model.is_some() { None } else { Some(format) },
-        type_size: type_size as u32,
-        pixel_width,
-        pixel_height,
-        pixel_depth,
-        layer_count: 0,
-        face_count: 1,
-        level_count: 1,
-        supercompression_scheme: None,
-        index: Index {
-            dfd_byte_offset: dfd_offset as u32,
-            dfd_byte_length: dfd_total_size as u32,
-            kvd_byte_offset: 0,
-            kvd_byte_length: 0,
-            sgd_byte_offset: 0,
-            sgd_byte_length: 0,
-        },
-    };
-    buf[..Header::LENGTH].copy_from_slice(&header.as_bytes());
+        if alpha_premultiplied {
+            writer = writer.alpha_premultiplied(true);
+        }
+        if let Some(tf) = transfer_function {
+            writer = writer.transfer_function(tf);
+        }
+        if let Some(cp) = color_primaries {
+            writer = writer.color_primaries(cp);
+        }
 
-    // Write level index
-    let level_index = LevelIndex {
-        byte_offset: level_data_offset as u64,
-        byte_length: level_data_size as u64,
-        uncompressed_byte_length: level_data_size as u64,
-    };
-    buf[level_index_offset..level_index_offset + LevelIndex::LENGTH].copy_from_slice(&level_index.as_bytes());
-
-    // Write DFD section (4-byte total size + block data)
-    buf[dfd_offset..dfd_offset + 4].copy_from_slice(&(dfd_total_size as u32).to_le_bytes());
-    buf[dfd_offset + 4..dfd_offset + 4 + dfd_block_bytes.len()].copy_from_slice(&dfd_block_bytes);
-
-    // Level data is already zeroed
-
-    Some(buf)
+        writer.build().ok()
+    }
 }
 
 /// Run `ktx validate` on the given bytes and return stderr on failure.
