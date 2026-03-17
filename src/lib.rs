@@ -188,6 +188,55 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
         self.header
     }
 
+    /// The color primaries used by this image (e.g. BT.709, BT.2020, etc.).
+    ///
+    /// Shorthand for [`dfd::Basic::color_primaries`]. Returns `None` if there is no basic DFD block.
+    pub fn color_primaries(&self) -> Option<dfd::ColorPrimaries> {
+        self.basic_dfd()?.color_primaries
+    }
+
+    /// The transfer function used by this image (e.g. Linear, sRGB, PQ, etc.).
+    ///
+    /// Shorthand for [`dfd::Basic::transfer_function`]. Returns `None` if there is no basic DFD block.
+    pub fn transfer_function(&self) -> Option<dfd::TransferFunction> {
+        self.basic_dfd()?.transfer_function
+    }
+
+    /// The color model used by this image (e.g. RGB, YUV, etc.). Note
+    /// that compressed formats will have a dedicated color model (e.g. BC1, ASTC)
+    /// rather than RGB, even if the uncompressed data would be RGB.
+    ///
+    /// Shorthand for [`dfd::Basic::color_model`]. Returns `None` if there is no basic DFD block.
+    pub fn color_model(&self) -> Option<dfd::ColorModel> {
+        self.basic_dfd()?.color_model
+    }
+
+    /// The alpha premuliplication state of the image. `true` if the RGB channels
+    /// are premultiplied by alpha, `false` if not.
+    ///
+    /// Shorthand for [`dfd::Basic::flags`]'s [`dfd::DataFormatFlags::ALPHA_PREMULTIPLIED`] flag.
+    /// Returns `None` if there is no basic DFD block.
+    pub fn is_alpha_premultiplied(&self) -> Option<bool> {
+        Some(
+            self.basic_dfd()?
+                .flags
+                .contains(dfd::DataFormatFlags::ALPHA_PREMULTIPLIED),
+        )
+    }
+
+    /// The program used to write this file, if specified by this file.
+    ///
+    /// Shorthand for retrieving the `KTXwriter` key from the key/value data.
+    ///
+    /// Returns None if:
+    /// - The file doesn't contain a `KTXwriter` key.
+    /// - The `KTXwriter` value is not valid UTF-8.
+    pub fn writer(&self) -> Option<&str> {
+        self.key_value_data()
+            .find(|(key, _)| *key == "KTXwriter")
+            .and_then(|(_, value)| core::str::from_utf8(value).ok())
+    }
+
     /// Iterator over the texture's mip levels, ordered largest to smallest
     /// (level 0 first, level *N-1* last). Each [`Level`] contains the raw
     /// (possibly supercompressed) bytes for that level.
@@ -215,6 +264,18 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// transfer function, primaries, and per-sample layout.
     pub fn dfd_blocks(&self) -> &[dfd::Block] {
         &self.dfd_blocks
+    }
+
+    /// The first [`dfd::Basic`] block, if present.
+    ///
+    /// Nearly all KTX2 files contain exactly one basic DFD block. Returns
+    /// `None` only for files that exclusively use non-standard
+    /// descriptor blocks.
+    pub fn basic_dfd(&self) -> Option<&dfd::Basic> {
+        self.dfd_blocks.iter().find_map(|block| match block {
+            dfd::Block::Basic(basic) => Some(basic),
+            _ => None,
+        })
     }
 
     /// Iterator over key/value metadata pairs. Keys are UTF-8 strings;
