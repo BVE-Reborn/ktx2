@@ -1,17 +1,12 @@
-//! Parser for the [ktx2](https://github.khronos.org/KTX-Specification/ktxspec.v2.html) texture container format.
+//! Reader and writer for the [KTX2](https://github.khronos.org/KTX-Specification/ktxspec.v2.html) texture container format.
 //!
-//! ## Features
-//! - [x] Async reading
-//! - [x] Parsing
-//! - [x] Validating
-//! - [x] [Data format description](https://github.khronos.org/KTX-Specification/ktxspec.v2.html#_data_format_descriptor)
-//! - [x] [Key/value data](https://github.khronos.org/KTX-Specification/ktxspec.v2.html#_keyvalue_data)
+//! ## Reading
 //!
-//! ## Example
+//! The [`Reader`] provides a safe API for parsing KTX2 files from in-memory buffers.
+//!
 //! ```rust
-//! // Crate instance of reader. This validates the header
-//! # let file = include_bytes!("../data/test_tex.ktx2");
-//! let mut reader = ktx2::Reader::new(file).expect("Can't create reader"); // Crate instance of reader.
+//! # let file_bytes = include_bytes!("../data/test_tex.ktx2");
+//! let reader = ktx2::Reader::new(file_bytes).expect("Can't create reader");
 //!
 //! // Get general texture information.
 //! let header = reader.header();
@@ -19,6 +14,48 @@
 //! // Read iterator over slices of each mipmap level.
 //! let levels = reader.levels().collect::<Vec<_>>();
 //! # let _ = (header, levels);
+//! ```
+//!
+//! ## Writing
+//!
+//! The [`Writer`] provides an ergonomic builder API for creating KTX2 textures.
+//!
+//! ```rust
+//! use ktx2::{Format, Writer};
+//!
+//! let pixel_data = vec![0u8; 4]; // 1x1 RGBA
+//! let ktx2_bytes = Writer::new_2d(Format::R8G8B8A8_SRGB, 1, 1)
+//!     .add_level(pixel_data)
+//!     .build()
+//!     .expect("Failed to build KTX2");
+//! ```
+//!
+//! ### Mip levels
+//!
+//! ```rust
+//! use ktx2::{Format, Writer};
+//!
+//! let level0 = vec![0u8; 16]; // 2x2 RGBA
+//! let level1 = vec![0u8; 4];  // 1x1 RGBA
+//! let ktx2_bytes = Writer::new_2d(Format::R8G8B8A8_SRGB, 2, 2)
+//!     .add_levels([level0, level1])
+//!     .build()
+//!     .expect("Failed to build KTX2");
+//! ```
+//!
+//! ### Custom DFD blocks
+//!
+//! ```rust
+//! use ktx2::{Format, Writer};
+//! use ktx2::dfd::{Basic, Block};
+//!
+//! let (basic, type_size) = Basic::from_format(Format::R8G8B8A8_SRGB).unwrap();
+//! let pixel_data = vec![0u8; 4];
+//! let ktx2_bytes = Writer::new_2d(Format::R8G8B8A8_SRGB, 1, 1)
+//!     .add_level(pixel_data)
+//!     .custom_dfd_blocks(vec![Block::Basic(basic)], type_size)
+//!     .build()
+//!     .expect("Failed to build KTX2");
 //! ```
 //!
 //! ## MSRV
@@ -36,10 +73,12 @@ pub mod dfd;
 mod enums;
 mod error;
 mod util;
+mod writer;
 
 pub use crate::{
     enums::{ColorModel, ColorPrimaries, Format, SupercompressionScheme, TransferFunction},
     error::ParseError,
+    writer::{WriteError, Writer},
 };
 
 use alloc::vec::Vec;
@@ -416,7 +455,7 @@ pub struct Header {
 ///
 /// You typically don't need these directly — use [`Reader::dfd_blocks`],
 /// [`Reader::key_value_data`], and [`Reader::supercompression_global_data`] instead.
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
 pub struct Index {
     /// Byte offset of the Data Format Descriptor section.
     pub dfd_byte_offset: u32,
