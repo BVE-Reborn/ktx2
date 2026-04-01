@@ -240,7 +240,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// Iterator over the texture's mip levels, ordered largest to smallest
     /// (level 0 first, level *N-1* last). Each [`Level`] contains the raw
     /// (possibly supercompressed) bytes for that level.
-    pub fn levels(&self) -> impl ExactSizeIterator<Item = Level> + '_ {
+    pub fn levels(&self) -> impl ExactSizeIterator<Item = Level<'_>> + '_ {
         self.level_index().unwrap().map(move |level| Level {
             // Bounds-checking previously performed in `new`
             data: &self.input.as_ref()[level.byte_offset as usize..(level.byte_offset + level.byte_length) as usize],
@@ -287,7 +287,7 @@ impl<Data: AsRef<[u8]>> Reader<Data> {
     /// the `KTXwriter` key is used to indicate the tool that wrote the file.
     ///
     /// For a full list of standard keys, see the [KTX specification](https://github.khronos.org/KTX-Specification/ktxspec.v2.html#_keyvalue_data).
-    pub fn key_value_data(&self) -> KeyValueDataIterator {
+    pub fn key_value_data(&self) -> KeyValueDataIterator<'_> {
         let header = self.header();
 
         let start = header.index.kvd_byte_offset as usize;
