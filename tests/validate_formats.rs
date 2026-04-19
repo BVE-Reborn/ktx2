@@ -73,7 +73,7 @@ fn build_ktx2(
     // Write header
     let header = Header {
         format: if color_model.is_some() { None } else { Some(format) },
-        type_size: type_size as u32,
+        type_size,
         pixel_width,
         pixel_height,
         pixel_depth,
