@@ -16,12 +16,20 @@ Per Keep a Changelog there are 6 main categories of changes:
 #### Table of Contents
 
 - [Unreleased](#unreleased)
+- [v0.5.0](#v050)
 - [v0.4.0](#v040)
 - [v0.3.0](#v030)
 - [Diffs](#diffs)
 
 ## Unreleased
 
+## v0.5.0
+
+Released 2026-04-19
+
+- Added missing `VkFormat` variants to `Format` (#39).
+- Added shorthand `Reader` accessors: `color_primaries()`, `transfer_function()`, `color_model()`, `is_alpha_premultiplied()`, `writer()`, and `basic_dfd()` (#43).
+- Added DFD generation: `dfd::Basic::from_format()` and `dfd::Basic::from_format_with()` for constructing basic DFD blocks from a `Format`.
 - Moved all Data Format Descriptor (DFD) types into new submodule called `dfd` and renamed them to be more
   understandable.
   - `DfdBlock` -> `dfd::Block`
@@ -77,5 +85,6 @@ Initial release under new ownership.
 
 ## Diffs
 
-- [Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v0.4.0...HEAD)
+- [Unreleased](https://github.com/BVE-Reborn/ktx2/compare/v0.5.0...HEAD)
+- [v0.5.0](https://github.com/BVE-Reborn/ktx2/compare/v0.4.0...v0.5.0)
 - [v0.4.0](https://github.com/BVE-Reborn/ktx2/compare/v0.3.0...v0.4.0)
