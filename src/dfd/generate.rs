@@ -713,7 +713,7 @@ impl Builder {
                         bit_offset: bit_offset[i] as u16,
                         bit_length: NonZeroU8::new(bit_count[i]).unwrap(),
                         channel_type: channel_ids[i],
-                        channel_type_qualifiers: sample_qualifiers(datatype, srgb, channel_ids[i]),
+                        channel_type_qualifiers: sample_qualifiers(datatype, transfer_function, channel_ids[i]),
                         sample_positions: SAMPLE_POS_ORIGIN,
                         lower,
                         upper,
@@ -909,7 +909,7 @@ impl Builder {
                         bit_offset: (i as u16) * sample_stride,
                         bit_length: NonZeroU8::new(sample_bits).unwrap(),
                         channel_type: ch,
-                        channel_type_qualifiers: sample_qualifiers(datatype, srgb, ch),
+                        channel_type_qualifiers: sample_qualifiers(datatype, transfer_function, ch),
                         sample_positions: SAMPLE_POS_ORIGIN,
                         lower,
                         upper,
@@ -1014,19 +1014,15 @@ fn qualifiers(datatype: Datatype) -> ChannelTypeQualifiers {
     }
 }
 
-/// Returns the [`ChannelTypeQualifiers`] for a specific sample, accounting for
-/// the sRGB alpha exception.
+/// Returns the [`ChannelTypeQualifiers`] for a specific sample, accounting for the universal
+/// linearity of the alpha channel.
 ///
-/// In sRGB formats, the alpha channel (ID 15) is always stored linearly — only
-/// the color channels use the sRGB OETF. The DFD signals this with the LINEAR
-/// qualifier on the alpha sample.
-fn sample_qualifiers(
-    datatype: Datatype,
-    srgb: FormatInherentTransferFunction,
-    channel_id: u8,
-) -> ChannelTypeQualifiers {
+/// In images with a non-linear transfer function, the alpha channel (ID 15) is always stored
+/// linearly — only the color channels use the transfer function. The DFD signals this with the
+/// LINEAR qualifier on the alpha sample.
+fn sample_qualifiers(datatype: Datatype, tf: TransferFunction, channel_id: u8) -> ChannelTypeQualifiers {
     let mut quals = qualifiers(datatype);
-    if srgb == FormatInherentTransferFunction::Srgb && channel_id == CHANNEL_ALPHA {
+    if tf != TransferFunction::Linear && channel_id == CHANNEL_ALPHA {
         quals |= ChannelTypeQualifiers::LINEAR;
     }
     quals
