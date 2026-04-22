@@ -16,11 +16,14 @@ Per Keep a Changelog there are 6 main categories of changes:
 #### Table of Contents
 
 - [Unreleased](#unreleased)
+- [v0.5.0](#v050)
 - [v0.4.0](#v040)
 - [v0.3.0](#v030)
 - [Diffs](#diffs)
 
 ## Unreleased
+
+## v0.5.0
 
 - Moved all Data Format Descriptor (DFD) types into new submodule called `dfd` and renamed them to be more
   understandable.
