@@ -23,6 +23,8 @@ Per Keep a Changelog there are 6 main categories of changes:
 
 ## Unreleased
 
+- Tag DFD for alpha channels of images with non-SRGB, non-linear EOTFs as linear
+
 ## v0.5.0
 
 Released 2026-04-19
