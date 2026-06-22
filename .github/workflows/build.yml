@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: install rust
         uses: cwfitzgerald/repo-common/.github/actions/install-rust@trunk
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: install rust
         uses: cwfitzgerald/repo-common/.github/actions/install-rust@trunk
@@ -104,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: check denies
         uses: EmbarkStudios/cargo-deny-action@v2
@@ -120,7 +120,7 @@ jobs:
       RUSTDOCFLAGS: ""
     steps:
       - name: checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: install rust
         uses: cwfitzgerald/repo-common/.github/actions/install-rust@trunk
