@@ -14,6 +14,8 @@ pub enum ParseError {
     ZeroFaceCount,
     /// Data Format Descriptor had an invalid sample bit length.
     InvalidSampleBitLength,
+    /// Data Format Descriptor had an invalid texel block dimension.
+    InvalidTexelBlockDimension,
     /// Unexpected end of buffer
     UnexpectedEnd,
 }
@@ -28,6 +30,7 @@ impl fmt::Display for ParseError {
             ParseError::ZeroWidth => f.pad("zero pixel width"),
             ParseError::ZeroFaceCount => f.pad("zero face count"),
             ParseError::InvalidSampleBitLength => f.pad("invalid sample bit length"),
+            ParseError::InvalidTexelBlockDimension => f.pad("invalid texel block dimension"),
             ParseError::UnexpectedEnd => f.pad("unexpected end of buffer"),
         }
     }
