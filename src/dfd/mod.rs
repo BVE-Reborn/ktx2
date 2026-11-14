@@ -360,7 +360,19 @@ impl Basic {
         let mut offset = 0;
 
         let [model, primaries, transfer, flags] = read_bytes(bytes, &mut offset)?;
-        let texel_block_dimensions = read_bytes(bytes, &mut offset)?.map(|dim| NonZeroU8::new(dim + 1).unwrap());
+        // Each dimension is stored minus one, so 255 would be 256, which doesn't fit in a `NonZeroU8`.
+        let texel_block_dimension = |dim: u8| {
+            dim.checked_add(1)
+                .and_then(NonZeroU8::new)
+                .ok_or(ParseError::InvalidTexelBlockDimension)
+        };
+        let [dim0, dim1, dim2, dim3] = read_bytes(bytes, &mut offset)?;
+        let texel_block_dimensions = [
+            texel_block_dimension(dim0)?,
+            texel_block_dimension(dim1)?,
+            texel_block_dimension(dim2)?,
+            texel_block_dimension(dim3)?,
+        ];
         let bytes_planes = read_bytes(bytes, &mut offset)?;
 
         let remaining_bytes = &bytes[Self::FIXED_LENGTH..];
@@ -617,6 +629,20 @@ mod tests {
         let bytes = basic.to_vec();
         let decoded = Basic::parse(&bytes).unwrap();
         assert_eq!(basic, decoded);
+    }
+
+    #[test]
+    fn basic_invalid_texel_block_dimension() {
+        let bytes = &[
+            0u8, 0, 0, 0, // model, primaries, transfer, flags
+            3, 255, 0, 0, // texel_block_dimensions
+            0, 0, 0, 0, 0, 0, 0, 0, // bytes_planes
+        ];
+
+        assert!(matches!(
+            Basic::parse(bytes),
+            Err(ParseError::InvalidTexelBlockDimension)
+        ));
     }
 
     #[test]

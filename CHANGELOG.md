@@ -24,6 +24,7 @@ Per Keep a Changelog there are 6 main categories of changes:
 ## Unreleased
 
 - Tag DFD for alpha channels of images with non-SRGB, non-linear EOTFs as linear
+- Fixed a panic when parsing a DFD with a texel block dimension byte of 255: it now returns `ParseError::InvalidTexelBlockDimension`.
 
 ## v0.5.0
 
